@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GLOBAL FLOW - Hazard Monitor</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 지도 엔진: Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -14,77 +15,83 @@
             background-color: #02040a;
             color: #e2e8f0;
             height: 100vh;
-            overflow: hidden;
             margin: 0;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
         .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(51, 65, 85, 0.4); }
-        #map { flex-grow: 1; background: #02040a; z-index: 1; }
-        .stat-card { padding: 10px 15px; border-radius: 8px; border-left: 3px solid #3b82f6; }
+        
+        /* 지도가 들어갈 컨테이너의 높이를 확실하게 설정 */
+        #map-container {
+            flex: 1; 
+            width: 100%;
+            position: relative;
+            min-height: 0; /* flex 자식의 높이 붕괴 방지 */
+        }
+        #map { 
+            position: absolute;
+            top: 0; bottom: 0; left: 0; right: 0;
+            background: #02040a; 
+        }
+
         .dot-live { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        
+        /* 팝업 스타일 수정 */
+        .leaflet-popup-content-wrapper { background: #0f172a !important; color: white !important; border: 1px solid #334155; }
+        .leaflet-popup-tip { background: #0f172a !important; }
     </style>
 </head>
 <body class="p-2 gap-2">
 
-    <!-- HEADER: LOGO & STATUS -->
-    <header class="flex justify-between items-center bg-slate-900/80 p-3 rounded-xl border border-white/5">
+    <!-- HEADER -->
+    <header class="flex justify-between items-center bg-slate-900/80 p-3 rounded-xl border border-white/5 shadow-2xl">
         <div class="flex items-center gap-4">
-            <h1 class="text-xl font-bold italic tracking-tighter text-blue-500 uppercase">Global Flow <span class="text-white">Hazard v2</span></h1>
+            <h1 class="text-xl font-bold italic tracking-tighter text-blue-500 uppercase leading-none">Global Flow <span class="text-white">Hazard v2</span></h1>
             <div class="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full border border-white/5">
                 <div class="dot-live"></div>
                 <span class="text-[10px] font-bold">SYSTEM LIVE</span>
             </div>
         </div>
-        <div id="refresh-countdown" class="text-[10px] text-slate-500">REFRESHING IN 10:00</div>
+        <div id="refresh-countdown" class="text-[10px] text-slate-500 font-bold">REFRESHING IN 10:00</div>
     </header>
 
-    <!-- TOP BAR: TIME & WEATHER & FX -->
-    <div class="grid grid-cols-3 gap-2 h-24">
-        <!-- SEOUL -->
-        <div class="glass rounded-xl p-3 flex justify-between items-center border-l-4 border-blue-500">
-            <div>
-                <p class="text-[10px] text-slate-500 font-bold">SEOUL / KOREA</p>
-                <p id="time-kr" class="text-xl font-bold">00:00:00</p>
-                <p id="weather-kr" class="text-[11px] text-blue-300">Loading...</p>
-            </div>
-            <div class="text-right">
-                <p class="text-[10px] text-slate-500 font-bold uppercase">USD/KRW</p>
-                <p id="val-fx" class="text-xl font-bold text-emerald-400">----.--</p>
-            </div>
-        </div>
-        <!-- NEW YORK -->
-        <div class="glass rounded-xl p-3 flex justify-between items-center border-l-4 border-red-500">
-            <div>
-                <p class="text-[10px] text-slate-500 font-bold">NEW YORK / USA</p>
-                <p id="time-us" class="text-xl font-bold text-red-400">00:00:00</p>
-                <p id="weather-us" class="text-[11px] text-red-300">Loading...</p>
-            </div>
-            <div class="text-right opacity-30">
-                <i data-lucide="cloud" class="w-8 h-8"></i>
+    <!-- TOP BAR -->
+    <div class="grid grid-cols-3 gap-2 flex-none">
+        <div class="glass rounded-xl p-4 border-l-4 border-blue-500">
+            <p class="text-[10px] text-slate-500 font-bold mb-1">SEOUL / KOREA</p>
+            <div class="flex justify-between items-end">
+                <div>
+                    <p id="time-kr" class="text-2xl font-bold leading-none">00:00:00</p>
+                    <p id="weather-kr" class="text-[11px] text-blue-300 mt-2 font-bold">Loading...</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[9px] text-slate-500 font-bold uppercase mb-1">USD/KRW</p>
+                    <p id="val-fx" class="text-xl font-bold text-emerald-400 leading-none">----.--</p>
+                </div>
             </div>
         </div>
-        <!-- LONDON -->
-        <div class="glass rounded-xl p-3 flex justify-between items-center border-l-4 border-amber-500">
-            <div>
-                <p class="text-[10px] text-slate-500 font-bold">LONDON / UK</p>
-                <p id="time-uk" class="text-xl font-bold text-amber-400">00:00:00</p>
-                <p id="weather-uk" class="text-[11px] text-amber-300">Loading...</p>
-            </div>
-            <div class="text-right opacity-30">
-                <i data-lucide="wind" class="w-8 h-8"></i>
-            </div>
+        <div class="glass rounded-xl p-4 border-l-4 border-red-500">
+            <p class="text-[10px] text-slate-500 font-bold mb-1">NEW YORK / USA</p>
+            <p id="time-us" class="text-2xl font-bold text-red-400 leading-none">00:00:00</p>
+            <p id="weather-us" class="text-[11px] text-red-300 mt-2 font-bold">Loading...</p>
+        </div>
+        <div class="glass rounded-xl p-4 border-l-4 border-amber-500">
+            <p class="text-[10px] text-slate-500 font-bold mb-1">LONDON / UK</p>
+            <p id="time-uk" class="text-2xl font-bold text-amber-400 leading-none">00:00:00</p>
+            <p id="weather-uk" class="text-[11px] text-amber-300 mt-2 font-bold">Loading...</p>
         </div>
     </div>
 
-    <!-- MAIN: DISASTER MAP -->
-    <div class="flex-grow glass rounded-xl overflow-hidden relative">
+    <!-- MAIN MAP AREA -->
+    <div id="map-container" class="glass rounded-xl overflow-hidden shadow-2xl">
         <div id="map"></div>
-        <div class="absolute bottom-4 left-4 z-[1000] bg-black/80 p-3 rounded-lg border border-white/10 flex flex-col gap-2">
-            <h3 class="text-[10px] font-bold text-slate-400 mb-1">LEGEND</h3>
-            <div class="flex items-center gap-2 text-[10px]"><span class="w-3 h-3 rounded-full bg-red-600"></span> Earthquake Mag 4.5+</div>
-            <div class="flex items-center gap-2 text-[10px]"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Current Location</div>
+        <!-- LEGEND -->
+        <div class="absolute bottom-4 left-4 z-[1000] bg-black/90 p-3 rounded-lg border border-white/10 flex flex-col gap-2">
+            <h3 class="text-[10px] font-bold text-slate-400 mb-1 tracking-widest uppercase">Global Legend</h3>
+            <div class="flex items-center gap-3 text-[10px]"><span class="w-3 h-3 rounded-full bg-red-600 shadow-[0_0_5px_red]"></span> Earthquake (Mag 4.5+)</div>
+            <div class="flex items-center gap-3 text-[10px]"><span class="w-3 h-3 rounded-full bg-blue-500"></span> System Node</div>
         </div>
     </div>
 
@@ -102,8 +109,22 @@
         };
 
         function initMap() {
-            map = L.map('map', { center: [20, 0], zoom: 2, zoomControl: false, attributionControl: false });
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+            // 지도가 그려질 영역을 초기화
+            map = L.map('map', { 
+                center: [20, 0], 
+                zoom: 2.5, 
+                zoomControl: false, 
+                attributionControl: false 
+            });
+
+            // 타일 주소를 더 안정적인 주소로 변경 (CartoDB Dark Matter)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+
+            // 지도가 화면 크기에 맞게 다시 계산되도록 강제 명령
+            setTimeout(() => { map.invalidateSize(); }, 500);
         }
 
         function updateAll() {
@@ -112,7 +133,6 @@
             updateHazards();
         }
 
-        // 1. 환율 (프록시 없이 직접 호출 - 빠름)
         async function updateFX() {
             try {
                 const res = await fetch('https://open.er-api.com/v6/latest/USD');
@@ -121,12 +141,11 @@
             } catch (e) {}
         }
 
-        // 2. 날씨 (Open-Meteo - 무료/무제한/빠름)
         async function updateWeather() {
             const cities = [
-                { id: 'kr', lat: 37.56, lon: 126.97 }, // Seoul
-                { id: 'us', lat: 40.71, lon: -74.00 }, // NY
-                { id: 'uk', lat: 51.50, lon: -0.12 }   // London
+                { id: 'kr', lat: 37.56, lon: 126.97 },
+                { id: 'us', lat: 40.71, lon: -74.00 },
+                { id: 'uk', lat: 51.50, lon: -0.12 }
             ];
 
             cities.forEach(async (city) => {
@@ -134,27 +153,30 @@
                     const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true`);
                     const data = await res.json();
                     const temp = data.current_weather.temperature;
-                    const code = data.current_weather.weathercode;
-                    document.getElementById(`weather-${city.id}`).textContent = `${temp}°C / Code ${code}`;
+                    const codes = {0: "Clear", 1: "Mainly Clear", 2: "Partly Cloudy", 3: "Overcast", 45: "Fog", 61: "Rain"};
+                    const status = codes[data.current_weather.weathercode] || "Active";
+                    document.getElementById(`weather-${city.id}`).textContent = `${temp}°C / ${status}`;
                 } catch (e) {}
             });
         }
 
-        // 3. 재난 (USGS 지진 데이터 - 직접 호출)
         async function updateHazards() {
             try {
                 const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson');
                 const data = await res.json();
+                
+                // 기존 마커 삭제
                 map.eachLayer(l => { if (l instanceof L.CircleMarker) map.removeLayer(l); });
+
                 data.features.forEach(f => {
                     const [lon, lat] = f.geometry.coordinates;
                     L.circleMarker([lat, lon], {
-                        radius: f.properties.mag * 2,
+                        radius: Math.max(f.properties.mag * 2, 4),
                         color: '#ef4444',
                         weight: 1,
                         fillColor: '#ef4444',
-                        fillOpacity: 0.4
-                    }).addTo(map).bindPopup(`<b>Mag ${f.properties.mag}</b><br>${f.properties.place}`);
+                        fillOpacity: 0.5
+                    }).addTo(map).bindPopup(`<b>Magnitude ${f.properties.mag}</b><br>${f.properties.place}`);
                 });
             } catch (e) {}
         }
