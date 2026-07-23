@@ -1,206 +1,413 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SENTINEL HUB - Global Intelligence</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'JetBrains Mono', monospace; background-color: #02040a; color: #e2e8f0; height: 100vh; margin: 0; display: flex; flex-direction: column; overflow: hidden; }
-        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(51, 65, 85, 0.4); }
-        #main-content { flex: 1; display: grid; grid-template-columns: 3.5fr 8.5fr; gap: 8px; min-height: 0; }
-        #map { height: 100%; width: 100%; background: #02040a; }
-        .aqi-row { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; }
-        .dot-live { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .m-stat { display: flex; flex-direction: column; align-items: flex-end; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>GLOBAL MONITOR - Open Intelligence Dashboard</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+body{
+    font-family:'JetBrains Mono',monospace;
+    background:#02040a;
+    color:#e2e8f0;
+    height:100vh;
+    margin:0;
+    overflow:hidden;
+}
+
+.glass{
+    background:rgba(15,23,42,.85);
+    backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.08);
+}
+
+#map{
+    height:100%;
+    width:100%;
+}
+
+.dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#10b981;
+    box-shadow:0 0 10px #10b981;
+    animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+    50%{opacity:.3}
+}
+
+.row{
+    border-bottom:1px solid rgba(255,255,255,.05);
+    padding:10px 0;
+}
+</style>
+
 </head>
-<body class="p-2 gap-2">
 
-    <!-- HEADER: TITLE & MARKET BAR -->
-    <header class="flex justify-between items-center bg-slate-900/90 p-3 rounded-xl border border-white/10 shadow-2xl">
-        <div class="flex items-center gap-4">
-            <h1 class="text-xl font-black tracking-tighter text-blue-500 uppercase">SENTINEL <span class="text-white font-light">HUB</span></h1>
-            <div class="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full border border-white/5">
-                <div class="dot-live"></div>
-                <span id="time-kr" class="text-[10px] font-bold text-white tracking-widest">00:00:00</span>
-            </div>
-        </div>
 
-        <!-- MARKET BAR: 통합 지표 바 -->
-        <div class="flex gap-4 items-center overflow-hidden">
-            <div class="m-stat">
-                <span class="text-[7px] text-slate-500 font-bold uppercase">USD/KRW</span>
-                <span id="m-usd" class="text-[11px] font-bold text-emerald-400">----</span>
-            </div>
-            <div class="m-stat">
-                <span class="text-[7px] text-slate-500 font-bold uppercase">KOSPI</span>
-                <span id="m-kospi" class="text-[11px] font-bold text-slate-400">----</span>
-            </div>
-            <div class="m-stat">
-                <span class="text-[7px] text-slate-500 font-bold uppercase">NASDAQ</span>
-                <span id="m-nasdaq" class="text-[11px] font-bold text-slate-400">----</span>
-            </div>
-            <div class="m-stat">
-                <span class="text-[7px] text-slate-500 font-bold uppercase">FEAR/GREED</span>
-                <span id="m-fng" class="text-[11px] font-bold text-orange-400">--</span>
-            </div>
-            <div class="m-stat border-r pr-4 border-white/10">
-                <span class="text-[7px] text-slate-500 font-bold uppercase">SYNC</span>
-                <span id="refresh-countdown" class="text-[11px] font-bold text-slate-500">00:00</span>
-            </div>
-        </div>
-    </header>
+<body class="p-2 flex flex-col gap-2">
 
-    <!-- MAIN SECTION -->
-    <main id="main-content">
-        <!-- LEFT: AIR INTELLIGENCE -->
-        <section class="glass rounded-xl p-4 overflow-hidden flex flex-col">
-            <h2 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4 border-b border-white/10 pb-2">Air Intelligence</h2>
-            <div id="aqi-list" class="flex-grow overflow-y-auto pr-2"></div>
-        </section>
 
-        <!-- RIGHT: INTEGRATED MAP -->
-        <section class="glass rounded-xl overflow-hidden relative">
-            <div id="map"></div>
-            <div class="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
-                <div class="bg-blue-900/90 p-2 rounded border border-blue-400 text-[9px] text-white backdrop-blur-md">
-                    <p class="font-bold border-b border-blue-400/50 mb-1 tracking-tighter uppercase">ISS Tracking</p>
-                    <p id="iss-coords" class="font-mono text-blue-200">SYNCING...</p>
-                </div>
-            </div>
-            <div class="absolute bottom-4 left-4 z-[1000] bg-black/80 p-3 rounded-lg border border-white/10 text-[9px] flex gap-4 backdrop-blur-md">
-                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-600"></span> Earthquake</div>
-                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> AQI Node</div>
-                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_5px_cyan]"></span> ISS Station</div>
-            </div>
-        </section>
-    </main>
+<header class="glass rounded-xl p-4 flex justify-between items-center">
 
-    <script>
-        const REFRESH_MS = 600000;
-        let countdown = REFRESH_MS / 1000;
-        let map, issMarker, aqiMarkers = [];
+<div class="flex items-center gap-4">
 
-        window.onload = () => {
-            initMap();
-            updateAll();
-            setInterval(updateClocks, 1000);
-            setInterval(tick, 1000);
-            setInterval(updateAll, REFRESH_MS);
-            setInterval(updateISS, 5000);
-        };
+<h1 class="text-xl font-bold text-cyan-400">
+GLOBAL <span class="text-white">MONITOR</span>
+</h1>
 
-        function initMap() {
-            map = L.map('map', { center: [25, 10], zoom: 3, zoomControl: false, attributionControl: false });
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-            issMarker = L.circleMarker([0, 0], { radius: 6, color: '#00ffff', weight: 2, fillColor: '#3b82f6', fillOpacity: 1 }).addTo(map);
-        }
+<div class="flex items-center gap-2 text-xs">
+<div class="dot"></div>
+<span id="clock">00:00:00</span>
+</div>
 
-        function updateAll() {
-            updateHazards();
-            updateAirIntelligence();
-            updateFearGreed();
-            updateFX();
-            updateIndices();
-        }
+</div>
 
-        // 환율 업데이트 (직접 요청 - 매우 빠름)
-        async function updateFX() {
-            try {
-                const res = await fetch('https://open.er-api.com/v6/latest/USD');
-                const data = await res.json();
-                document.getElementById('m-usd').textContent = data.rates.KRW.toFixed(1);
-            } catch (e) {}
-        }
 
-        // 지수 업데이트 (프록시 사용 - 병렬 처리)
-        async function updateIndices() {
-            const symbols = { kospi: '%5EKS11', nasdaq: '%5EIXIC' };
-            for (const [id, sym] of Object.entries(symbols)) {
-                try {
-                    const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/' + sym)}`);
-                    const data = await res.json();
-                    const meta = data.chart.result[0].meta;
-                    const price = meta.regularMarketPrice;
-                    const prev = meta.previousClose;
-                    const el = document.getElementById(`m-${id}`);
-                    el.textContent = price.toLocaleString(undefined, {maximumFractionDigits: 1});
-                    el.className = `text-[11px] font-bold ${price >= prev ? 'text-emerald-400' : 'text-red-500'}`;
-                } catch (e) {
-                    document.getElementById(`m-${id}`).textContent = "ERR";
-                }
-            }
-        }
+<div class="text-[10px] text-slate-400">
+OPEN DATA INTELLIGENCE PLATFORM
+</div>
 
-        async function updateAirIntelligence() {
-            const cities = [{ name: 'SEOUL', lat: 37.56, lon: 126.97 }, { name: 'BEIJING', lat: 39.9, lon: 116.4 }, { name: 'NEW DELHI', lat: 28.6, lon: 77.2 }, { name: 'NEW YORK', lat: 40.71, lon: -74 }, { name: 'LONDON', lat: 51.5, lon: -0.1 }];
-            const listEl = document.getElementById('aqi-list');
-            listEl.innerHTML = '';
-            aqiMarkers.forEach(m => map.removeLayer(m));
-            aqiMarkers = [];
 
-            for (const city of cities) {
-                try {
-                    const res = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${city.lat}&longitude=${city.lon}&current=us_aqi`);
-                    const data = await res.json();
-                    const aqi = data.current.us_aqi;
-                    const color = aqi > 100 ? '#ef4444' : aqi > 50 ? '#f59e0b' : '#10b981';
-                    listEl.innerHTML += `<div class="aqi-row flex justify-between"><div><p class="text-[10px] font-bold">${city.name}</p></div><p class="text-lg font-black" style="color: ${color}">${aqi}</p></div>`;
-                    const m = L.circleMarker([city.lat, city.lon], { radius: 8, color: color, weight: 2, fillColor: color, fillOpacity: 0.6 }).addTo(map);
-                    aqiMarkers.push(m);
-                } catch (e) {}
-            }
-        }
+</header>
 
-        async function updateISS() {
-            try {
-                const res = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
-                const data = await res.json();
-                issMarker.setLatLng([data.latitude, data.longitude]);
-                document.getElementById('iss-coords').textContent = `${data.latitude.toFixed(1)}N ${data.longitude.toFixed(1)}E`;
-            } catch (e) {}
-        }
 
-        async function updateFearGreed() {
-            try {
-                const res = await fetch('https://api.alternative.me/fng/');
-                const data = await res.json();
-                const v = data.data[0].value;
-                const el = document.getElementById('m-fng');
-                el.textContent = v;
-                el.className = `text-[11px] font-bold ${v < 40 ? 'text-red-500' : v > 60 ? 'text-emerald-500' : 'text-orange-400'}`;
-            } catch (e) {}
-        }
 
-        async function updateHazards() {
-            try {
-                const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson');
-                const data = await res.json();
-                map.eachLayer(l => { if (l instanceof L.CircleMarker && !aqiMarkers.includes(l) && l !== issMarker) map.removeLayer(l); });
-                data.features.forEach(f => {
-                    const [lon, lat] = f.geometry.coordinates;
-                    L.circleMarker([lat, lon], { radius: f.properties.mag * 1.8, color: '#ef4444', weight: 1, fillOpacity: 0.3 }).addTo(map);
-                });
-            } catch (e) {}
-        }
+<main class="flex-1 grid grid-cols-12 gap-2 min-h-0">
 
-        function updateClocks() {
-            const f = (tz) => new Intl.DateTimeFormat('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false, timeZone:tz }).format(new Date());
-            document.getElementById('time-kr').textContent = f('Asia/Seoul');
-        }
 
-        function tick() {
-            countdown--;
-            if (countdown <= 0) countdown = REFRESH_MS / 1000;
-            const m = Math.floor(countdown / 60).toString().padStart(2, '0');
-            const s = (countdown % 60).toString().padStart(2, '0');
-            document.getElementById('refresh-countdown').textContent = `${m}:${s}`;
-        }
-    </script>
+<section class="glass rounded-xl p-4 col-span-3 overflow-auto">
+
+<h2 class="text-xs text-cyan-400 font-bold mb-3">
+AIR QUALITY MONITOR
+</h2>
+
+<div id="air"></div>
+
+
+<h2 class="text-xs text-red-400 font-bold mt-6 mb-3">
+EARTHQUAKE EVENTS
+</h2>
+
+<div id="quake-count">
+SYNCING...
+</div>
+
+
+<h2 class="text-xs text-yellow-400 font-bold mt-6 mb-3">
+DATA SOURCES
+</h2>
+
+<div class="text-[10px] text-slate-400 leading-5">
+
+USGS Earthquake<br>
+Open-Meteo Air Quality<br>
+ISS Public Tracking<br>
+NOAA Space Weather
+
+</div>
+
+
+</section>
+
+
+
+<section class="glass rounded-xl overflow-hidden col-span-9 relative">
+
+<div id="map"></div>
+
+
+<div class="absolute top-4 right-4 z-[999] 
+bg-black/70 p-3 rounded-lg text-xs">
+
+<div class="text-cyan-400 font-bold">
+ISS TRACKING
+</div>
+
+<div id="iss">
+SYNCING...
+</div>
+
+</div>
+
+
+<div class="absolute bottom-4 left-4 z-[999]
+bg-black/70 p-3 rounded text-xs">
+
+<span class="text-red-500">●</span>
+Earthquake
+
+&nbsp;
+
+<span class="text-green-400">●</span>
+AQI Node
+
+&nbsp;
+
+<span class="text-blue-400">●</span>
+ISS
+
+</div>
+
+
+</section>
+
+
+</main>
+
+
+<script>
+
+
+let map;
+let issMarker;
+
+let quakeMarkers=[];
+let airMarkers=[];
+
+
+
+window.onload=()=>{
+
+initMap();
+
+loadAir();
+loadEarthquakes();
+loadISS();
+
+setInterval(clock,1000);
+setInterval(loadISS,5000);
+
+};
+
+
+
+function initMap(){
+
+map=L.map('map',{
+center:[20,0],
+zoom:2,
+minZoom:2
+});
+
+
+L.tileLayer(
+'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+).addTo(map);
+
+
+
+issMarker=L.circleMarker(
+[0,0],
+{
+radius:7,
+color:'#00ffff',
+fillColor:'#3b82f6',
+fillOpacity:1
+}
+).addTo(map);
+
+
+}
+
+
+
+
+async function loadAir(){
+
+
+const cities=[
+
+["SEOUL",37.56,126.97],
+["LONDON",51.5,-0.1],
+["NEW YORK",40.7,-74],
+["TOKYO",35.6,139.6],
+["SYDNEY",-33.8,151.2]
+
+];
+
+
+let box=document.getElementById("air");
+
+box.innerHTML="";
+
+
+for(const c of cities){
+
+
+try{
+
+let r=await fetch(
+`https://air-quality-api.open-meteo.com/v1/air-quality?
+latitude=${c[1]}&
+longitude=${c[2]}&
+current=us_aqi`
+.replace(/\s/g,"")
+);
+
+
+let d=await r.json();
+
+let aqi=d.current.us_aqi;
+
+
+box.innerHTML+=`
+
+<div class="row flex justify-between">
+
+<span>${c[0]}</span>
+
+<span class="font-bold ${
+aqi>100?'text-red-400':
+aqi>50?'text-yellow-400':
+'text-green-400'
+}">
+${aqi}
+</span>
+
+</div>
+
+`;
+
+
+let marker=L.circleMarker(
+[c[1],c[2]],
+{
+radius:7,
+color:"#10b981",
+fillOpacity:.6
+}
+).addTo(map);
+
+
+airMarkers.push(marker);
+
+
+}catch(e){}
+
+
+}
+
+
+}
+
+
+
+
+async function loadEarthquakes(){
+
+
+quakeMarkers.forEach(x=>map.removeLayer(x));
+
+quakeMarkers=[];
+
+
+let r=await fetch(
+"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson"
+);
+
+
+let d=await r.json();
+
+
+document.getElementById("quake-count")
+.innerHTML=
+`${d.features.length} events detected`;
+
+
+
+d.features.forEach(q=>{
+
+
+let [lon,lat]=q.geometry.coordinates;
+
+let m=L.circleMarker(
+[lat,lon],
+{
+radius:q.properties.mag*2,
+color:"#ef4444",
+fillOpacity:.35
+}
+).addTo(map);
+
+
+quakeMarkers.push(m);
+
+
+});
+
+
+}
+
+
+
+
+async function loadISS(){
+
+
+try{
+
+
+let r=await fetch(
+"https://api.wheretheiss.at/v1/satellites/25544"
+);
+
+
+let d=await r.json();
+
+
+issMarker.setLatLng(
+[d.latitude,d.longitude]
+);
+
+
+document.getElementById("iss")
+.innerHTML=
+`
+${Math.abs(d.latitude).toFixed(1)}
+${d.latitude>0?'N':'S'}
+<br>
+${Math.abs(d.longitude).toFixed(1)}
+${d.longitude>0?'E':'W'}
+`;
+
+
+
+}catch(e){}
+
+
+
+}
+
+
+
+
+
+function clock(){
+
+document.getElementById("clock")
+.innerHTML=
+new Date().toLocaleTimeString(
+"ko-KR"
+);
+
+}
+
+
+
+</script>
+
+
 </body>
 </html>
