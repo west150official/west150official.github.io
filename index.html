@@ -41,6 +41,13 @@
         .dot-error { background: #ef4444; }
         .dot-loading { background: #f59e0b; }
 
+        /* breaking news ticker */
+        .ticker-wrap { overflow: hidden; white-space: nowrap; position: relative; }
+        .ticker-track { display: inline-flex; animation: ticker-scroll 60s linear infinite; will-change: transform; }
+        .ticker-wrap:hover .ticker-track { animation-play-state: paused; }
+        @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @media (prefers-reduced-motion: reduce) { .ticker-track { animation: none; } }
+
         /* 구글 번역기 스타일 강제 고정 */
         #google_translate_element { height: 38px; overflow: hidden; border-radius: 8px; border: 1px solid #334155; background: #0f172a; }
         .goog-te-banner-frame.skiptranslate, .goog-te-gadget span { display: none !important; }
@@ -75,26 +82,15 @@
             </div>
         </div>
 
-        <!-- MARKET DATA BOARD -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
-            <div class="flex flex-col items-center p-3 glass rounded-2xl">
-                <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">USD / KRW</span>
-                <span id="val-usd" class="text-xl font-mono font-bold text-emerald-400">----.--</span>
-            </div>
-            <div class="flex flex-col items-center p-3 glass rounded-2xl">
-                <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">KOSPI</span>
-                <span id="val-kospi" class="text-xl font-mono font-bold text-slate-300">----.--</span>
-                <span id="chg-kospi" class="text-[10px] font-mono text-slate-500">&nbsp;</span>
-            </div>
-            <div class="flex flex-col items-center p-3 glass rounded-2xl">
-                <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">KOSDAQ</span>
-                <span id="val-kosdaq" class="text-xl font-mono font-bold text-slate-300">----.--</span>
-                <span id="chg-kosdaq" class="text-[10px] font-mono text-slate-500">&nbsp;</span>
-            </div>
-            <div class="flex flex-col items-center p-3 glass rounded-2xl">
-                <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">NASDAQ</span>
-                <span id="val-nasdaq" class="text-xl font-mono font-bold text-slate-300">----.--</span>
-                <span id="chg-nasdaq" class="text-[10px] font-mono text-slate-500">&nbsp;</span>
+        <!-- BREAKING NEWS TICKER -->
+        <div class="glass rounded-2xl border border-white/5 flex items-center gap-3 px-4 py-2.5">
+            <span class="flex items-center gap-1.5 text-[10px] font-black tracking-widest text-red-400 uppercase shrink-0">
+                <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> BREAKING
+            </span>
+            <div class="ticker-wrap flex-1">
+                <div id="ticker-track" class="ticker-track text-[13px] font-medium text-slate-300">
+                    <span class="px-8 text-slate-500">Loading headlines…</span>
+                </div>
             </div>
         </div>
     </header>
@@ -102,7 +98,7 @@
     <!-- MAIN NEWS AREA (TOP) -->
     <main class="max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <div class="lg:col-span-9 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- KOREA FEED -->
             <section class="glass rounded-2xl overflow-hidden flex flex-col shadow-2xl">
                 <div class="p-4 bg-blue-500/10 border-b border-white/5 flex justify-between items-center">
@@ -131,14 +127,53 @@
             </section>
         </div>
 
-        <!-- SIDEBAR: WEATHER MAP -->
-        <div class="lg:col-span-3 h-full">
-            <div class="glass rounded-2xl overflow-hidden h-[540px] relative">
+        <!-- WEATHER MAP (below the news, full width) -->
+        <div class="lg:col-span-12">
+            <div class="glass rounded-2xl overflow-hidden h-[420px] relative">
                 <div class="p-4 bg-black/40 border-b border-white/5 absolute top-0 w-full z-10 flex justify-between items-center">
                     <h2 class="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Live Weather Globe</h2>
                     <span id="refresh-countdown" class="text-[9px] font-mono text-slate-500"></span>
                 </div>
                 <iframe width="100%" height="100%" src="https://embed.windy.com/embed2.html?lat=37.5&lon=127.0&zoom=3&level=surface&overlay=wind&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=false" frameborder="0"></iframe>
+            </div>
+        </div>
+
+        <!-- GLOBAL DISASTER WATCH (USGS earthquakes + GDACS alerts) -->
+        <div class="lg:col-span-12">
+            <div class="glass rounded-2xl overflow-hidden shadow-2xl">
+                <div class="p-4 bg-amber-500/10 border-b border-white/5 flex justify-between items-center">
+                    <h2 class="text-[11px] font-bold tracking-widest text-amber-400 uppercase">Global Disaster Watch</h2>
+                    <span id="status-disaster" class="w-2 h-2 rounded-full dot-loading animate-pulse"></span>
+                </div>
+                <div id="disaster-feed" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-px bg-white/5 max-h-[360px] overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- MARKET DATA BOARD -->
+        <div class="lg:col-span-12">
+            <div class="glass rounded-2xl border border-white/5 p-4">
+                <h2 class="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-3">Markets</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="flex flex-col items-center p-3 bg-white/5 rounded-xl">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">USD / KRW</span>
+                        <span id="val-usd" class="text-xl font-mono font-bold text-emerald-400">----.--</span>
+                    </div>
+                    <div class="flex flex-col items-center p-3 bg-white/5 rounded-xl">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">KOSPI</span>
+                        <span id="val-kospi" class="text-xl font-mono font-bold text-slate-300">----.--</span>
+                        <span id="chg-kospi" class="text-[10px] font-mono text-slate-500">&nbsp;</span>
+                    </div>
+                    <div class="flex flex-col items-center p-3 bg-white/5 rounded-xl">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">KOSDAQ</span>
+                        <span id="val-kosdaq" class="text-xl font-mono font-bold text-slate-300">----.--</span>
+                        <span id="chg-kosdaq" class="text-[10px] font-mono text-slate-500">&nbsp;</span>
+                    </div>
+                    <div class="flex flex-col items-center p-3 bg-white/5 rounded-xl">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">NASDAQ</span>
+                        <span id="val-nasdaq" class="text-xl font-mono font-bold text-slate-300">----.--</span>
+                        <span id="chg-nasdaq" class="text-[10px] font-mono text-slate-500">&nbsp;</span>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -188,10 +223,14 @@
         }
 
         // 1. 뉴스 데이터 수집
+        // NOTE: Google News' /rss/search endpoint sorts by relevance, not by time —
+        // that's why broad keyword queries were surfacing old articles. Its plain
+        // /rss (and /rss/headlines/section/topic/...) feeds are the real "top
+        // stories" feed and are naturally recency-sorted, so we use those instead.
         async function fetchAllNews() {
-            getNews('속보 OR 정치 OR 경제 OR 재난 OR IT', 'ko', 'news-kr');
-            getNews('US breaking politics economy', 'en', 'news-us');
-            getNews('world news international geopolitics', 'en', 'news-global');
+            getNews('https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko', 'news-kr');
+            getNews('https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en', 'news-us');
+            getNews('https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en', 'news-global');
         }
 
         // Parse Google News RSS XML into our normalized item shape
@@ -206,12 +245,10 @@
             })).filter(item => item.title);
         }
 
-        async function getNews(query, lang, containerId) {
+        async function getNews(rssUrl, containerId) {
             const container = document.getElementById(containerId);
             setStatus(containerId, 'loading');
             if (!lastGoodNews[containerId]) renderSkeleton(container);
-
-            const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=${lang}&gl=${lang === 'ko' ? 'KR' : 'US'}&ceid=${lang === 'ko' ? 'KR:ko' : 'US:en'}`;
 
             // Each entry: fetch a URL, return normalized items, or throw
             const sources = [
@@ -227,11 +264,14 @@
 
             for (const fetchSource of sources) {
                 try {
-                    const items = await fetchSource();
+                    let items = await fetchSource();
                     if (!items.length) throw new Error('empty feed');
+                    // Belt-and-suspenders: force newest-first regardless of feed order
+                    items = items.slice().sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
                     lastGoodNews[containerId] = items;
                     renderNews(container, items);
                     setStatus(containerId, 'ok');
+                    updateTicker();
                     return;
                 } catch (e) {
                     // try the next source
@@ -257,6 +297,102 @@
                     <h3 class="text-[13.5px] font-semibold text-slate-200 leading-snug group-hover:text-white transition-colors">${escapeHtml(item.title)}</h3>
                 </a>
             `).join('');
+        }
+
+        // 1b. 속보 전광판 (모든 피드의 최신 헤드라인을 합쳐서 스크롤 표시)
+        function updateTicker() {
+            const track = document.getElementById('ticker-track');
+            if (!track) return;
+            const combined = ['news-kr', 'news-us', 'news-global']
+                .flatMap(id => (lastGoodNews[id] || []).slice(0, 4))
+                .map(item => escapeHtml(item.title));
+            if (!combined.length) return;
+            const row = combined.map(t => `<span class="mx-6">${t}</span>`).join('<span class="text-slate-600">•</span>');
+            // duplicate the row so the 50%-translateX loop has no visible seam
+            track.innerHTML = row + row;
+        }
+
+        // 1c. 세계 재난 감시 (지진 + GDACS 자연재해 경보)
+        // USGS는 키 없이, CORS 허용된 상태로 바로 호출 가능. GDACS는 RSS라 뉴스와
+        // 같은 CORS 프록시를 재사용해서 가져옴.
+        async function fetchDisasters() {
+            const feedEl = document.getElementById('disaster-feed');
+            const dot = document.getElementById('status-disaster');
+            const setDot = (state) => {
+                if (!dot) return;
+                dot.classList.remove('dot-live', 'dot-error', 'dot-loading');
+                dot.classList.add(state === 'ok' ? 'dot-live' : state === 'error' ? 'dot-error' : 'dot-loading');
+            };
+            setDot('loading');
+
+            let quakes = [];
+            let alerts = [];
+
+            // Earthquakes worldwide, magnitude 4.5+, last 24h
+            try {
+                const res = await fetch('https://earthquake.usgs.gov/earthquakefeeds/geojson/4.5_day.geojson');
+                const data = await res.json();
+                quakes = data.features.map(f => ({
+                    type: 'quake',
+                    time: f.properties.time,
+                    mag: f.properties.mag,
+                    title: `M ${f.properties.mag.toFixed(1)} — ${f.properties.place}`,
+                    link: f.properties.url
+                }));
+            } catch (e) { /* USGS unreachable this cycle */ }
+
+            // GDACS: floods, storms, wildfires, volcanoes, droughts worldwide
+            const gdacsUrl = 'https://www.gdacs.org/xml/rss.xml';
+            const proxies = [
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(gdacsUrl)}`,
+                `https://corsproxy.io/?url=${encodeURIComponent(gdacsUrl)}`
+            ];
+            for (const proxyUrl of proxies) {
+                try {
+                    const text = await (await fetch(proxyUrl)).text();
+                    const xml = new DOMParser().parseFromString(text, 'text/xml');
+                    if (xml.querySelector('parsererror')) throw new Error('bad xml');
+                    alerts = Array.from(xml.querySelectorAll('item')).map(node => {
+                        const title = node.querySelector('title')?.textContent || '';
+                        const pubDate = node.querySelector('pubDate')?.textContent || '';
+                        return {
+                            type: 'gdacs',
+                            time: new Date(pubDate).getTime(),
+                            title,
+                            severity: /red/i.test(title) ? 'red' : /orange/i.test(title) ? 'orange' : 'green',
+                            link: node.querySelector('link')?.textContent || ''
+                        };
+                    });
+                    break; // got a working proxy, stop trying more
+                } catch (e) { /* try next proxy */ }
+            }
+
+            const combined = [...quakes, ...alerts].sort((a, b) => b.time - a.time).slice(0, 12);
+
+            if (!combined.length) {
+                setDot('error');
+                if (!feedEl.children.length) {
+                    feedEl.innerHTML = "<p class='p-4 text-red-400 text-xs col-span-full'>Signal lost — retrying next cycle</p>";
+                }
+                return;
+            }
+
+            setDot('ok');
+            feedEl.innerHTML = combined.map(item => {
+                const badgeColor = item.type === 'quake'
+                    ? (item.mag >= 6 ? 'text-red-400 bg-red-500/10' : item.mag >= 5 ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400 bg-white/5')
+                    : (item.severity === 'red' ? 'text-red-400 bg-red-500/10' : item.severity === 'orange' ? 'text-amber-400 bg-amber-500/10' : 'text-emerald-400 bg-emerald-500/10');
+                const badgeLabel = item.type === 'quake' ? 'EARTHQUAKE' : 'GDACS';
+                return `
+                    <a href="${encodeURI(item.link)}" target="_blank" rel="noopener noreferrer" class="news-card block group bg-slate-950/60 hover:bg-white/5">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${badgeColor}">${badgeLabel}</span>
+                            <span class="text-[9px] text-slate-600 font-mono">${new Date(item.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        <h3 class="text-[12.5px] font-semibold text-slate-200 leading-snug group-hover:text-white transition-colors">${escapeHtml(item.title)}</h3>
+                    </a>
+                `;
+            }).join('');
         }
 
         // 2. 실시간 환율
@@ -337,10 +473,12 @@
             setInterval(updateClocks, 1000);
             setInterval(tickCountdown, 1000);
             setInterval(fetchAllNews, REFRESH_INTERVAL_MS);
+            setInterval(fetchDisasters, REFRESH_INTERVAL_MS);
             setInterval(updateExchange, 300000);
             setInterval(updateIndices, 300000);
             updateClocks();
             fetchAllNews();
+            fetchDisasters();
             updateExchange();
             updateIndices();
         };
