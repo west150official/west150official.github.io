@@ -111,7 +111,7 @@
       <!-- 지도 1: 실시간 관측 지도 (Leaflet) -->
       <div id="map-obs" class="map-container"></div>
       
-      <!-- 지도 2: 실시간 기상 흐름 지도 (Windy Embed - 100% 무료 & 에러 없음) -->
+      <!-- 지도 2: 실시간 기상 흐름 지도 (Windy Embed) -->
       <div id="map-weather" class="map-container hidden">
         <iframe 
           src="https://embed.windy.com/embed2.html?lat=36.5&lon=127.5&detailLat=36.5&detailLon=127.5&width=100%25&height=100%25&zoom=5&level=surface&overlay=wind&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=m%2Fs&metricTemp=%C2%B0C&radarRange=-1" 
@@ -132,8 +132,8 @@
         </button>
       </div>
 
-      <!-- 우측 상단 ISS 위치 표시 -->
-      <div class="absolute top-4 right-4 z-[1000] panel rounded-xl p-3 text-xs">
+      <!-- 우측 하단 ISS 위치 표시 (윈디 메뉴 가림 방지) -->
+      <div class="absolute bottom-4 right-4 z-[1000] panel rounded-xl p-3 text-xs">
         <div class="text-cyan-400 font-bold mb-1">실시간 위성 추적 (KST)</div>
         <div id="iss">국제우주정거장(ISS) 동기화 중...</div>
       </div>
