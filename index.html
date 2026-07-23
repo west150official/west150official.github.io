@@ -97,15 +97,9 @@
         <div id="air" class="text-xs mt-2">동기화 중...</div>
       </div>
 
-      <!-- 태풍/열대저기압 정보 -->
-      <div class="panel rounded-xl p-3">
-        <h2 class="text-purple-400 font-bold text-sm">🌪 태풍 및 폭풍</h2>
-        <div id="storm" class="text-xs mt-2">동기화 중...</div>
-      </div>
-
       <!-- 우주 기상 -->
       <div class="panel rounded-xl p-3">
-        <h2 class="text-yellow-400 font-bold text-sm">☀ 우주 기상 (태풍/자기장)</h2>
+        <h2 class="text-yellow-400 font-bold text-sm">☀ 우주 기상 (지자기/태양)</h2>
         <div id="solar" class="text-xs mt-2">동기화 중...</div>
       </div>
 
@@ -130,14 +124,11 @@
         </button>
       </div>
 
-      <!-- 기상 지도용 레이어 선택 필터 (기상 지도 탭일 때만 표시) -->
+      <!-- 기상 지도용 레이어 선택 필터 -->
       <div id="weather-controls" class="absolute top-16 left-1/2 -translate-x-1/2 z-[1000] hidden flex gap-1.5 panel p-1 rounded-lg text-[11px]">
         <button onclick="setWeatherLayer('wind')" class="px-2.5 py-1 bg-cyan-950/80 text-cyan-300 rounded hover:bg-cyan-800">💨 바람 흐름</button>
-
         <button onclick="setWeatherLayer('precip')" class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded hover:bg-slate-700">🌧 강수량(비/눈)</button>
-
         <button onclick="setWeatherLayer('clouds')" class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded hover:bg-slate-700">☁ 구름/위성</button>
-
         <button onclick="setWeatherLayer('temp')" class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded hover:bg-slate-700">🌡 기온</button>
       </div>
 
@@ -147,12 +138,11 @@
         <div id="iss">국제우주정거장(ISS) 동기화 중...</div>
       </div>
 
-      <!-- 좌측 하단 지도 범례 (관측 지도일 때 표시) -->
+      <!-- 좌측 하단 지도 범례 -->
       <div id="legend-obs" class="absolute bottom-4 left-4 z-[1000] panel rounded-xl p-3 text-xs leading-relaxed">
         🔴 지진 발생지<br>
         🟢 주요 도시 대기질<br>
-        🔵 ISS (우주정거장)<br>
-        🟠 활동 중인 태풍
+        🔵 ISS (우주정거장)
       </div>
 
     </div>
@@ -161,10 +151,10 @@
 
   <script>
     // ================================
-    // 지도 초기화 (2개 독립 생성)
+    // 지도 초기화
     // ================================
     
-    // 1. 관측 지도 (Dark Matter)
+    // 1. 관측 지도
     const mapObs = L.map('map-obs').setView([20, 0], 2);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap &copy; CARTO',
@@ -177,10 +167,8 @@
       maxZoom: 19
     }).addTo(mapWeather);
 
-    // 기상 레이어 변수
     let currentWeatherLayer = null;
 
-    // 기상 레이어 변경 함수 (RainViewer & OpenStreetMap 계열 무료 레이어)
     function setWeatherLayer(type) {
       if (currentWeatherLayer) {
         mapWeather.removeLayer(currentWeatherLayer);
@@ -200,10 +188,8 @@
       currentWeatherLayer = L.tileLayer(tileUrl, { opacity: 0.65 }).addTo(mapWeather);
     }
     
-    // 기본 기상 레이어를 바람으로 설정
     setWeatherLayer('wind');
 
-    // 지도 탭 전환 함수
     function switchMap(target) {
       const btnObs = document.getElementById('btn-obs');
       const btnWeather = document.getElementById('btn-weather');
@@ -239,7 +225,6 @@
     const layers = {
       earth: [],
       air: [],
-      storm: [],
       iss: null
     };
 
@@ -249,7 +234,7 @@
     }
 
     // ================================
-    // 한국 시계 & ISS 추적
+    // 시계 & ISS 추적
     // ================================
     function updateClock() {
       const now = new Date();
@@ -414,44 +399,11 @@
       }
     }
 
-    // 4. 태풍/폭풍
-    async function loadStorm() {
-      try {
-        clearLayer(layers.storm);
-        const res = await fetch("https://www.nhc.noaa.gov/CurrentStorms.json");
-        const data = await res.json();
-        const storms = data.activeStorms || [];
-
-        document.getElementById("storm").innerHTML = `
-          <div class="item">현재 활동 중인 폭풍: <span class="text-purple-400 font-bold">${storms.length}개</span></div>
-        `;
-
-        storms.forEach(storm => {
-          if (storm.latitude && storm.longitude) {
-            const marker = L.circleMarker([storm.latitude, storm.longitude], {
-              radius: 8,
-              color: "#c084fc",
-              fillColor: "#a855f7",
-              fillOpacity: 0.7
-            }).addTo(mapObs);
-
-            marker.bindPopup(`🌪 <b>${storm.name}</b>`);
-            layers.storm.push(marker);
-          }
-        });
-      } catch (e) {
-        document.getElementById("storm").innerHTML = `
-          <div class="item">현재 활동 중인 폭풍: <span class="text-gray-400 font-bold">0개</span></div>
-        `;
-      }
-    }
-
     // 실행
     function runGlobalSystems() {
       loadEarthquake();
       loadAir();
       loadSolar();
-      loadStorm();
     }
 
     runGlobalSystems();
