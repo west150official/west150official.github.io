@@ -108,11 +108,19 @@
     <!-- 오른쪽 지도 영역 -->
     <div class="col-span-9 relative h-screen">
       
-      <!-- 지도 1: 실시간 관측 지도 -->
+      <!-- 지도 1: 실시간 관측 지도 (Leaflet) -->
       <div id="map-obs" class="map-container"></div>
       
-      <!-- 지도 2: 실시간 기상 흐름 지도 -->
-      <div id="map-weather" class="map-container hidden"></div>
+      <!-- 지도 2: 실시간 기상 흐름 지도 (Windy Embed - 100% 무료 & 에러 없음) -->
+      <div id="map-weather" class="map-container hidden">
+        <iframe 
+          src="https://embed.windy.com/embed2.html?lat=36.5&lon=127.5&detailLat=36.5&detailLon=127.5&width=100%25&height=100%25&zoom=5&level=surface&overlay=wind&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=m%2Fs&metricTemp=%C2%B0C&radarRange=-1" 
+          width="100%" 
+          height="100%" 
+          frameborder="0"
+          style="border:0;">
+        </iframe>
+      </div>
 
       <!-- 상단 중앙 지도 탭 전환 버튼 -->
       <div class="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] flex gap-2 panel p-1.5 rounded-xl">
@@ -137,66 +145,19 @@
         🔵 ISS (우주정거장)
       </div>
 
-      <!-- 기상 지도 범례 -->
-      <div id="legend-weather" class="absolute bottom-4 left-4 z-[1000] panel rounded-xl p-3 text-xs leading-relaxed hidden">
-        🌧 <b>실시간 비/강수 레이더</b><br>
-        <span class="text-cyan-300">■</span> 약한 비/구름<br>
-        <span class="text-yellow-400">■</span> 보통 비<br>
-        <span class="text-red-500">■</span> 강한 비/폭우
-      </div>
-
     </div>
 
   </div>
 
   <script>
     // ================================
-    // 지도 초기화
+    // 관측 지도 초기화
     // ================================
-    
-    // 1. 관측 지도
     const mapObs = L.map('map-obs').setView([36.5, 127.5], 3);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap &copy; CARTO',
       maxZoom: 19
     }).addTo(mapObs);
-
-    // 2. 기상 흐름 지도
-    const mapWeather = L.map('map-weather').setView([36.5, 127.5], 3);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19
-    }).addTo(mapWeather);
-
-    let weatherRadarLayer = null;
-
-    // RainViewer 무료 오픈 레이더 API 연동
-    async function loadRainViewerRadar() {
-      try {
-        const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-        const data = await res.json();
-        
-        if (data && data.radar && data.radar.past && data.radar.past.length > 0) {
-          // 가장 최신 레이더 타임스탬프 가져오기
-          const latestTime = data.radar.past[data.radar.past.length - 1].time;
-          
-          if (weatherRadarLayer) {
-            mapWeather.removeLayer(weatherRadarLayer);
-          }
-
-          // RainViewer 타일 레이어 생성 (API 키 필요 없음)
-          weatherRadarLayer = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${latestTime}/256/{z}/{x}/{y}/2/1_1.png`, {
-            opacity: 0.75,
-            maxZoom: 18
-          }).addTo(mapWeather);
-        }
-      } catch (e) {
-        console.error("기상 레이더 로드 실패:", e);
-      }
-    }
-
-    loadRainViewerRadar();
-    // 5분마다 실시간 기상 레이더 자동 갱신
-    setInterval(loadRainViewerRadar, 300000);
 
     function switchMap(target) {
       const btnObs = document.getElementById('btn-obs');
@@ -204,13 +165,11 @@
       const mapObsEl = document.getElementById('map-obs');
       const mapWeatherEl = document.getElementById('map-weather');
       const legendObs = document.getElementById('legend-obs');
-      const legendWeather = document.getElementById('legend-weather');
 
       if (target === 'obs') {
         mapObsEl.classList.remove('hidden');
         mapWeatherEl.classList.add('hidden');
         legendObs.classList.remove('hidden');
-        legendWeather.classList.add('hidden');
         
         btnObs.classList.add('active');
         btnWeather.classList.remove('active');
@@ -219,11 +178,9 @@
         mapObsEl.classList.add('hidden');
         mapWeatherEl.classList.remove('hidden');
         legendObs.classList.add('hidden');
-        legendWeather.classList.remove('hidden');
         
         btnWeather.classList.add('active');
         btnObs.classList.remove('active');
-        mapWeather.invalidateSize();
       }
     }
 
