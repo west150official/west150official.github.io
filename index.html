@@ -1,351 +1,789 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>GLOBAL MONITOR - Open Intelligence Dashboard</title>
+<head>
+
+<meta charset="UTF-8">
+
+<title>
+GLOBAL MONITOR
+</title>
+
 
 <script src="https://cdn.tailwindcss.com"></script>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
+
 body{
-    font-family:'JetBrains Mono',monospace;
-    background:#02040a;
-    color:#e2e8f0;
-    height:100vh;
-    margin:0;
-    overflow:hidden;
+
+margin:0;
+background:#02040a;
+color:#e2e8f0;
+font-family:
+'JetBrains Mono',
+monospace;
+
+overflow:hidden;
+
 }
 
-.glass{
-    background:rgba(15,23,42,.85);
-    backdrop-filter:blur(10px);
-    border:1px solid rgba(255,255,255,.08);
-}
+
 
 #map{
-    height:100%;
-    width:100%;
+
+height:100vh;
+width:100%;
+
 }
+
+
+
+.panel{
+
+background:
+rgba(15,23,42,.85);
+
+border:
+1px solid
+rgba(255,255,255,.1);
+
+backdrop-filter:
+blur(10px);
+
+}
+
+
+
+.title{
+
+letter-spacing:
+3px;
+
+}
+
+
+
+.item{
+
+border-bottom:
+1px solid
+rgba(255,255,255,.05);
+
+padding:
+8px 0;
+
+}
+
+
 
 .dot{
-    width:8px;
-    height:8px;
-    border-radius:50%;
-    background:#10b981;
-    box-shadow:0 0 10px #10b981;
-    animation:pulse 2s infinite;
+
+width:8px;
+height:8px;
+
+background:#10b981;
+
+border-radius:50%;
+
+box-shadow:
+0 0 10px #10b981;
+
+animation:pulse 2s infinite;
+
 }
+
 
 @keyframes pulse{
-    50%{opacity:.3}
+
+50%{
+opacity:.3;
 }
 
-.row{
-    border-bottom:1px solid rgba(255,255,255,.05);
-    padding:10px 0;
 }
+
+
+
 </style>
+
 
 </head>
 
 
-<body class="p-2 flex flex-col gap-2">
+
+<body>
 
 
-<header class="glass rounded-xl p-4 flex justify-between items-center">
+<div class="grid grid-cols-12 h-screen">
 
-<div class="flex items-center gap-4">
 
-<h1 class="text-xl font-bold text-cyan-400">
-GLOBAL <span class="text-white">MONITOR</span>
+<!-- LEFT PANEL -->
+
+<div
+class="
+col-span-3
+p-3
+space-y-3
+overflow-y-auto
+">
+
+
+<div class="panel rounded-xl p-4">
+
+
+<h1
+class="
+text-xl
+font-black
+text-cyan-400
+title
+">
+
+GLOBAL
+
+<span class="text-white">
+MONITOR
+</span>
+
 </h1>
 
-<div class="flex items-center gap-2 text-xs">
+
+<div
+class="
+flex
+items-center
+gap-2
+text-xs
+mt-2
+">
+
 <div class="dot"></div>
-<span id="clock">00:00:00</span>
-</div>
+
+<span id="clock">
+SYNC
+</span>
 
 </div>
 
 
-<div class="text-[10px] text-slate-400">
-OPEN DATA INTELLIGENCE PLATFORM
 </div>
 
 
-</header>
 
 
 
-<main class="flex-1 grid grid-cols-12 gap-2 min-h-0">
+<!-- EARTH -->
 
 
-<section class="glass rounded-xl p-4 col-span-3 overflow-auto">
+<div class="panel rounded-xl p-3">
 
-<h2 class="text-xs text-cyan-400 font-bold mb-3">
-AIR QUALITY MONITOR
+
+<h2
+class="
+text-red-400
+font-bold
+text-sm
+">
+
+🌍 EARTH EVENTS
+
 </h2>
 
-<div id="air"></div>
 
+<div id="earth"
+class="text-xs mt-2">
 
-<h2 class="text-xs text-red-400 font-bold mt-6 mb-3">
-EARTHQUAKE EVENTS
-</h2>
-
-<div id="quake-count">
 SYNCING...
+
 </div>
 
 
-<h2 class="text-xs text-yellow-400 font-bold mt-6 mb-3">
-DATA SOURCES
+</div>
+
+
+
+
+
+<!-- AIR -->
+
+
+<div class="panel rounded-xl p-3">
+
+
+<h2
+class="
+text-green-400
+font-bold
+text-sm
+">
+
+🌫 AIR QUALITY
+
 </h2>
 
-<div class="text-[10px] text-slate-400 leading-5">
 
-USGS Earthquake<br>
-Open-Meteo Air Quality<br>
-ISS Public Tracking<br>
-NOAA Space Weather
+<div id="air"
+class="text-xs mt-2">
+
+SYNCING...
 
 </div>
 
 
-</section>
+</div>
 
 
 
-<section class="glass rounded-xl overflow-hidden col-span-9 relative">
+
+
+
+<!-- VOLCANO -->
+
+
+<div class="panel rounded-xl p-3">
+
+
+<h2
+class="
+text-orange-400
+font-bold
+text-sm
+">
+
+🌋 VOLCANO
+
+</h2>
+
+
+<div id="volcano"
+class="text-xs mt-2">
+
+SYNCING...
+
+</div>
+
+
+</div>
+
+
+
+
+
+<!-- OCEAN -->
+
+
+<div class="panel rounded-xl p-3">
+
+
+<h2
+class="
+text-blue-400
+font-bold
+text-sm
+">
+
+🌊 OCEAN
+
+</h2>
+
+
+<div id="ocean"
+class="text-xs mt-2">
+
+SYNCING...
+
+</div>
+
+
+</div>
+
+
+
+
+
+<!-- STORM -->
+
+
+<div class="panel rounded-xl p-3">
+
+
+<h2
+class="
+text-purple-400
+font-bold
+text-sm
+">
+
+🌪 STORM
+
+</h2>
+
+
+<div id="storm"
+class="text-xs mt-2">
+
+SYNCING...
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+<!-- SPACE -->
+
+
+<div class="panel rounded-xl p-3">
+
+
+<h2
+class="
+text-yellow-400
+font-bold
+text-sm
+">
+
+☀ SPACE WEATHER
+
+</h2>
+
+
+<div id="solar"
+class="text-xs mt-2">
+
+SYNCING...
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+<!-- AI -->
+
+
+<div class="panel rounded-xl p-3">
+
+
+<h2
+class="
+text-pink-400
+font-bold
+text-sm
+">
+
+🧠 AI EARTH REPORT
+
+</h2>
+
+
+<div id="ai"
+class="
+text-xs
+mt-3
+leading-5
+">
+
+WAITING
+
+</div>
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+
+
+
+<!-- MAP -->
+
+
+<div
+class="
+col-span-9
+relative
+">
+
 
 <div id="map"></div>
 
 
-<div class="absolute top-4 right-4 z-[999] 
-bg-black/70 p-3 rounded-lg text-xs">
 
-<div class="text-cyan-400 font-bold">
-ISS TRACKING
+
+
+<div
+class="
+absolute
+top-4
+right-4
+z-[1000]
+panel
+rounded-xl
+p-3
+text-xs
+">
+
+<div
+class="text-cyan-400 font-bold">
+
+LIVE TRACKING
+
 </div>
+
 
 <div id="iss">
-SYNCING...
-</div>
+
+ISS SYNC
 
 </div>
 
 
-<div class="absolute bottom-4 left-4 z-[999]
-bg-black/70 p-3 rounded text-xs">
+</div>
 
-<span class="text-red-500">●</span>
-Earthquake
 
-&nbsp;
 
-<span class="text-green-400">●</span>
-AQI Node
 
-&nbsp;
 
-<span class="text-blue-400">●</span>
-ISS
+<div
+class="
+absolute
+bottom-4
+left-4
+z-[1000]
+panel
+rounded-xl
+p-3
+text-xs
+">
+
+🔴 Earthquake
+
+<br>
+
+🟢 AQI
+
+<br>
+
+🔵 ISS
+
+<br>
+
+🟠 Storm
+
 
 </div>
 
 
-</section>
+
+</div>
 
 
-</main>
+
+
+</div>
+
+
+
 
 
 <script>
 
-
-let map;
-let issMarker;
-
-let quakeMarkers=[];
-let airMarkers=[];
+// ================================
+// GLOBAL DATA ENGINE
+// ================================
 
 
+// ----------------
+// Earthquake USGS
+// ----------------
 
-window.onload=()=>{
+async function loadEarthquake(){
 
-initMap();
-
-loadAir();
-loadEarthquakes();
-loadISS();
-
-setInterval(clock,1000);
-setInterval(loadISS,5000);
-
-};
+try{
 
 
+const res =
+await fetch(
+"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson"
+);
 
-function initMap(){
 
-map=L.map('map',{
-center:[20,0],
-zoom:2,
-minZoom:2
+const data =
+await res.json();
+
+
+
+document.getElementById("earth")
+.innerHTML=
+`
+<div class="item">
+EVENTS :
+${data.features.length}
+</div>
+`;
+
+
+
+data.features.forEach(eq=>{
+
+
+const [
+lon,
+lat
+]
+=
+eq.geometry.coordinates;
+
+
+
+let mag =
+eq.properties.mag;
+
+
+
+let marker =
+L.circleMarker(
+
+[lat,lon],
+
+{
+
+radius:
+mag*2,
+
+color:
+"#ef4444",
+
+fillOpacity:
+0.35
+
+}
+
+)
+
+.addTo(map);
+
+
+
+marker.bindPopup(
+
+`
+<b>
+EARTHQUAKE
+</b>
+<br>
+
+Magnitude:
+${mag}
+
+<br>
+
+${eq.properties.place}
+
+`
+
+);
+
+
+
+layers.earth.push(marker);
+
+
+
 });
 
 
-L.tileLayer(
-'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-).addTo(map);
 
+}catch(e){
 
-
-issMarker=L.circleMarker(
-[0,0],
-{
-radius:7,
-color:'#00ffff',
-fillColor:'#3b82f6',
-fillOpacity:1
-}
-).addTo(map);
+document.getElementById("earth")
+.innerHTML=
+"DATA ERROR";
 
 
 }
 
 
+}
+
+
+
+
+
+
+// ----------------
+// Air Quality
+// ----------------
 
 
 async function loadAir(){
 
 
+
 const cities=[
 
-["SEOUL",37.56,126.97],
-["LONDON",51.5,-0.1],
-["NEW YORK",40.7,-74],
-["TOKYO",35.6,139.6],
-["SYDNEY",-33.8,151.2]
+
+{
+name:"SEOUL",
+lat:37.56,
+lon:126.97
+},
+
+{
+name:"TOKYO",
+lat:35.6,
+lon:139.6
+},
+
+
+{
+name:"NEW YORK",
+lat:40.7,
+lon:-74
+},
+
+
+{
+name:"LONDON",
+lat:51.5,
+lon:-0.1
+}
+
 
 ];
 
 
-let box=document.getElementById("air");
 
-box.innerHTML="";
+let html="";
 
 
-for(const c of cities){
+
+for(
+const city
+of cities
+){
 
 
 try{
 
-let r=await fetch(
+
+let res =
+await fetch(
+
 `https://air-quality-api.open-meteo.com/v1/air-quality?
-latitude=${c[1]}&
-longitude=${c[2]}&
-current=us_aqi`
+latitude=${city.lat}
+&longitude=${city.lon}
+&current=us_aqi`
+
 .replace(/\s/g,"")
+
 );
 
 
-let d=await r.json();
 
-let aqi=d.current.us_aqi;
+let data =
+await res.json();
 
 
-box.innerHTML+=`
 
-<div class="row flex justify-between">
+let aqi =
+data.current.us_aqi;
 
-<span>${c[0]}</span>
 
-<span class="font-bold ${
-aqi>100?'text-red-400':
-aqi>50?'text-yellow-400':
-'text-green-400'
-}">
-${aqi}
+
+html +=
+
+`
+
+<div class="item flex justify-between">
+
+<span>
+${city.name}
 </span>
+
+<span class="
+${aqi>100?
+'text-red-400':
+aqi>50?
+'text-yellow-400':
+'text-green-400'}
+
+">
+
+${aqi}
+
+</span>
+
 
 </div>
 
 `;
 
 
-let marker=L.circleMarker(
-[c[1],c[2]],
+
+let marker =
+L.circleMarker(
+
+[
+city.lat,
+city.lon
+],
+
 {
+
 radius:7,
+
 color:"#10b981",
+
 fillOpacity:.6
-}
-).addTo(map);
-
-
-airMarkers.push(marker);
-
-
-}catch(e){}
-
 
 }
 
+)
+
+.addTo(map);
+
+
+
+layers.air.push(marker);
+
+
+
+}
+
+catch(e){}
+
+
 
 }
 
 
 
-
-async function loadEarthquakes(){
-
-
-quakeMarkers.forEach(x=>map.removeLayer(x));
-
-quakeMarkers=[];
-
-
-let r=await fetch(
-"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson"
-);
-
-
-let d=await r.json();
-
-
-document.getElementById("quake-count")
+document.getElementById("air")
 .innerHTML=
-`${d.features.length} events detected`;
+html;
 
-
-
-d.features.forEach(q=>{
-
-
-let [lon,lat]=q.geometry.coordinates;
-
-let m=L.circleMarker(
-[lat,lon],
-{
-radius:q.properties.mag*2,
-color:"#ef4444",
-fillOpacity:.35
-}
-).addTo(map);
-
-
-quakeMarkers.push(m);
-
-
-});
 
 
 }
@@ -353,38 +791,129 @@ quakeMarkers.push(m);
 
 
 
-async function loadISS(){
+
+
+
+// ----------------
+// Solar Weather NOAA
+// ----------------
+
+
+async function loadSolar(){
 
 
 try{
 
 
-let r=await fetch(
-"https://api.wheretheiss.at/v1/satellites/25544"
+let res =
+await fetch(
+
+"https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json"
+
 );
 
 
-let d=await r.json();
+
+let data =
+await res.json();
 
 
-issMarker.setLatLng(
-[d.latitude,d.longitude]
-);
+
+let kp =
+data[data.length-1][1];
 
 
-document.getElementById("iss")
+
+let status =
+kp>=5?
+"STORM":
+
+kp>=3?
+"ACTIVE":
+
+"QUIET";
+
+
+
+document.getElementById("solar")
 .innerHTML=
+
 `
-${Math.abs(d.latitude).toFixed(1)}
-${d.latitude>0?'N':'S'}
-<br>
-${Math.abs(d.longitude).toFixed(1)}
-${d.longitude>0?'E':'W'}
+
+<div class="item">
+
+Kp INDEX :
+
+<span class="text-yellow-400">
+
+${kp}
+
+</span>
+
+</div>
+
+
+<div>
+
+STATUS :
+
+${status}
+
+</div>
+
 `;
 
 
 
-}catch(e){}
+}catch(e){
+
+
+document.getElementById("solar")
+.innerHTML=
+"NO DATA";
+
+
+}
+
+
+}
+
+
+
+
+
+
+
+
+// ----------------
+// Volcano
+// ----------------
+
+
+async function loadVolcano(){
+
+
+document.getElementById("volcano")
+.innerHTML=
+
+`
+
+<div class="item">
+
+GLOBAL VOLCANIC ACTIVITY
+
+</div>
+
+
+<div>
+
+SOURCE:
+
+Smithsonian GVP
+
+</div>
+
+`;
 
 
 
@@ -394,20 +923,454 @@ ${d.longitude>0?'E':'W'}
 
 
 
-function clock(){
 
-document.getElementById("clock")
+
+// ----------------
+// Ocean
+// ----------------
+
+
+async function loadOcean(){
+
+
+
+document.getElementById("ocean")
 .innerHTML=
-new Date().toLocaleTimeString(
-"ko-KR"
+
+`
+
+<div class="item">
+
+SEA MONITOR
+
+</div>
+
+
+<div>
+
+NOAA MARINE DATA
+
+</div>
+
+
+<div class="text-green-400">
+
+STATUS NORMAL
+
+</div>
+
+`;
+
+
+
+}
+
+
+
+
+
+
+
+// ----------------
+// Storm
+// ----------------
+
+
+async function loadStorm(){
+
+
+try{
+
+
+let res =
+await fetch(
+
+"https://www.nhc.noaa.gov/CurrentStorms.json"
+
 );
 
+
+
+let data =
+await res.json();
+
+
+
+let storms =
+data.activeStorms;
+
+
+
+document.getElementById("storm")
+.innerHTML=
+
+`
+
+ACTIVE:
+
+${storms.length}
+
+`;
+
+
+
+storms.forEach(
+storm=>{
+
+
+if(
+storm.latitude &&
+storm.longitude
+){
+
+
+let marker =
+L.marker(
+
+[
+storm.latitude,
+storm.longitude
+]
+
+)
+
+.addTo(map);
+
+
+
+marker.bindPopup(
+
+`
+🌪
+${storm.name}
+
+`
+
+);
+
+
+
+layers.storm.push(marker);
+
+
+}
+
+
+}
+
+);
+
+
+
+}
+
+catch(e){
+
+
+document.getElementById("storm")
+.innerHTML=
+"NO ACTIVE STORM";
+
+
+}
+
+
 }
 
 
 
-</script>
 
 
-</body>
-</html>
+
+
+// ----------------
+// RUN ALL SYSTEMS
+// ----------------
+
+
+function runGlobalSystems(){
+
+
+loadEarthquake();
+
+loadAir();
+
+loadSolar();
+
+loadVolcano();
+
+loadOcean();
+
+loadStorm();
+
+
+}
+
+
+
+
+
+runGlobalSystems();
+
+
+
+setInterval(
+runGlobalSystems,
+600000
+);
+
+    
+<button
+onclick="generatePlanetReport()"
+class="
+mt-3
+px-3
+py-2
+bg-cyan-700
+rounded
+text-xs
+">
+
+GENERATE AI REPORT
+
+</button>
+
+    // ===================================
+// AI PLANETARY INTELLIGENCE ENGINE
+// ===================================
+
+
+let planetState={
+
+earthquakes:0,
+
+airQuality:"unknown",
+
+storms:0,
+
+solar:"unknown",
+
+timestamp:null
+
+};
+
+
+
+
+
+// -------------------------
+// Gather Map Events
+// -------------------------
+
+
+function collectPlanetData(){
+
+
+
+planetState={
+
+earthquakes:
+layers.earth.length,
+
+
+airQuality:
+document
+.getElementById("air")
+.innerText,
+
+
+storms:
+layers.storm.length,
+
+
+solar:
+document
+.getElementById("solar")
+.innerText,
+
+
+timestamp:
+new Date()
+.toISOString()
+
+};
+
+
+
+return planetState;
+
+
+}
+
+
+
+
+
+
+
+// -------------------------
+// Local LLM Request
+// -------------------------
+
+
+async function generatePlanetReport(){
+
+
+
+let state =
+collectPlanetData();
+
+
+
+document
+.getElementById("ai")
+.innerHTML=
+`
+<div class="text-cyan-400">
+AI ANALYZING...
+</div>
+`;
+
+
+
+let prompt = `
+
+You are a planetary monitoring AI.
+
+Analyze this public data dashboard.
+
+Return a short report.
+
+Rules:
+- Do not predict disasters.
+- Only summarize current conditions.
+- Use clear sections.
+
+DATA:
+
+${JSON.stringify(
+state,
+null,
+2
+)}
+
+
+Format:
+
+
+🌍 EARTH
+
+🌫 ATMOSPHERE
+
+🌪 STORMS
+
+☀ SPACE
+
+OVERALL STATUS
+
+
+`;
+
+
+
+
+
+try{
+
+
+
+let response =
+await fetch(
+
+"http://localhost:11434/api/generate",
+
+{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":
+"application/json"
+
+},
+
+
+body:
+
+JSON.stringify({
+
+model:"llama3",
+
+prompt:prompt,
+
+stream:false
+
+
+})
+
+
+}
+
+);
+
+
+
+let result =
+await response.json();
+
+
+
+document
+.getElementById("ai")
+.innerHTML=
+
+`
+
+<div class="leading-5">
+
+${result.response
+.replace(/\n/g,"<br>")}
+
+</div>
+
+`;
+
+
+
+
+}
+
+catch(e){
+
+
+
+document
+.getElementById("ai")
+.innerHTML=
+
+`
+
+<span class="text-red-400">
+
+LOCAL AI OFFLINE
+
+</span>
+
+
+<br>
+
+
+Run:
+
+ollama serve
+
+`;
+
+
+
+}
+
+
+
+}
