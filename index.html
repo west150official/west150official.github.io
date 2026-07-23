@@ -42,7 +42,7 @@
 
     .item {
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      padding: 8px 0;
+      padding: 6px 0;
     }
 
     .dot {
@@ -74,7 +74,7 @@
     <!-- 왼쪽 패널 -->
     <div class="col-span-3 p-3 space-y-3 overflow-y-auto h-screen z-10">
 
-      <!-- 타이틀 영역 -->
+      <!-- 타이틀 영역 & KST 시계 -->
       <div class="panel rounded-xl p-4">
         <h1 class="text-xl font-black text-cyan-400 title">
           INFO <span class="text-white">FLOW</span>
@@ -83,6 +83,24 @@
           <div class="dot"></div>
           <span id="clock" class="text-cyan-200 font-mono">한국 시간 동기화 중...</span>
         </div>
+      </div>
+
+      <!-- NEW: 세계 주요 도시 실시간 시각 -->
+      <div class="panel rounded-xl p-3">
+        <h2 class="text-indigo-400 font-bold text-sm">🌐 세계 주요 도시 시각</h2>
+        <div id="world-clock" class="text-xs mt-2 space-y-1">동기화 중...</div>
+      </div>
+
+      <!-- NEW: 서울 일출/일몰 & 달의 상태 -->
+      <div class="panel rounded-xl p-3">
+        <h2 class="text-amber-400 font-bold text-sm">🌅 일출 / 일몰 & 천문</h2>
+        <div id="sun-moon" class="text-xs mt-2">동기화 중...</div>
+      </div>
+
+      <!-- NEW: 실시간 산불 / 화재 감지 (NASA) -->
+      <div class="panel rounded-xl p-3">
+        <h2 class="text-orange-500 font-bold text-sm">🔥 실시간 화재 / 산불 (NASA)</h2>
+        <div id="wildfire" class="text-xs mt-2">동기화 중...</div>
       </div>
 
       <!-- 지진 정보 -->
@@ -132,7 +150,7 @@
         </button>
       </div>
 
-      <!-- 우측 하단 ISS 위치 표시 (윈디 메뉴 가림 방지) -->
+      <!-- 우측 하단 ISS 위치 표시 -->
       <div class="absolute bottom-4 right-4 z-[1000] panel rounded-xl p-3 text-xs">
         <div class="text-cyan-400 font-bold mb-1">실시간 위성 추적 (KST)</div>
         <div id="iss">국제우주정거장(ISS) 동기화 중...</div>
@@ -141,6 +159,7 @@
       <!-- 좌측 하단 지도 범례 -->
       <div id="legend-obs" class="absolute bottom-4 left-4 z-[1000] panel rounded-xl p-3 text-xs leading-relaxed">
         🔴 지진 발생지<br>
+        🔥 산불/화재 감지지 (NASA)<br>
         🟢 주요 도시 대기질<br>
         🔵 ISS (우주정거장)
       </div>
@@ -151,7 +170,7 @@
 
   <script>
     // ================================
-    // 관측 지도 초기화
+    // 지도 초기화
     // ================================
     const mapObs = L.map('map-obs').setView([36.5, 127.5], 3);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -170,7 +189,6 @@
         mapObsEl.classList.remove('hidden');
         mapWeatherEl.classList.add('hidden');
         legendObs.classList.remove('hidden');
-        
         btnObs.classList.add('active');
         btnWeather.classList.remove('active');
         mapObs.invalidateSize();
@@ -178,7 +196,6 @@
         mapObsEl.classList.add('hidden');
         mapWeatherEl.classList.remove('hidden');
         legendObs.classList.add('hidden');
-        
         btnWeather.classList.add('active');
         btnObs.classList.remove('active');
       }
@@ -190,6 +207,7 @@
     const layers = {
       earth: [],
       air: [],
+      wildfire: [],
       iss: null
     };
 
@@ -199,25 +217,89 @@
     }
 
     // ================================
-    // 시계 & ISS 추적
+    // 1. 한국 시계 & 세계 도시 시계
     // ================================
     function updateClock() {
       const now = new Date();
+      
+      // 한국 시계
       const kstString = now.toLocaleString('ko-KR', {
         timeZone: 'Asia/Seoul',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
       });
       document.getElementById('clock').innerText = `KST ${kstString}`;
+
+      // 세계 도시 시계 (뉴욕, 런던, 도쿄)
+      const getTime = (tz) => now.toLocaleTimeString('ko-KR', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false });
+      
+      document.getElementById('world-clock').innerHTML = `
+        <div class="flex justify-between item"><span>🇺🇸 뉴욕 (EDT)</span><span class="font-mono text-cyan-300">${getTime('America/New_York')}</span></div>
+        <div class="flex justify-between item"><span>🇬🇧 런던 (BST)</span><span class="font-mono text-cyan-300">${getTime('Europe/London')}</span></div>
+        <div class="flex justify-between item"><span>🇯🇵 도쿄 (JST)</span><span class="font-mono text-cyan-300">${getTime('Asia/Tokyo')}</span></div>
+      `;
     }
     setInterval(updateClock, 1000);
     updateClock();
 
+    // ================================
+    // 2. 일출 / 일몰 데이터 (서울 기준)
+    // ================================
+    async function loadSunMoon() {
+      try {
+        const res = await fetch("https://api.sunrise-sunset.org/json?lat=37.5665&lng=126.9780&formatted=0");
+        const data = await res.json();
+        
+        const sunrise = new Date(data.results.sunrise).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false });
+        const sunset = new Date(data.results.sunset).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false });
+
+        document.getElementById('sun-moon').innerHTML = `
+          <div class="flex justify-between item"><span>🌅 서울 일출</span><span class="font-mono text-amber-300">${sunrise}</span></div>
+          <div class="flex justify-between item"><span>🌇 서울 일몰</span><span class="font-mono text-orange-400">${sunset}</span></div>
+        `;
+      } catch (e) {
+        document.getElementById('sun-moon').innerText = "천문 데이터 수집 실패";
+      }
+    }
+
+    // ================================
+    // 3. NASA 실시간 산불 / 화재 감지 (EONET)
+    // ================================
+    async function loadWildfire() {
+      try {
+        clearLayer(layers.wildfire);
+        const res = await fetch("https://eonet.gsfc.nasa.gov/api/v3/categories/wildfires");
+        const data = await res.json();
+        const fires = data.events || [];
+
+        document.getElementById("wildfire").innerHTML = `
+          <div class="item">전 세계 화재 감지: <span class="text-orange-400 font-bold">${fires.length}건</span></div>
+        `;
+
+        fires.forEach(fire => {
+          const geom = fire.geometry[fire.geometry.length - 1];
+          if (geom && geom.coordinates) {
+            const [lon, lat] = geom.coordinates;
+
+            const marker = L.circleMarker([lat, lon], {
+              radius: 6,
+              color: "#f97316",
+              fillColor: "#ffabe7",
+              fillOpacity: 0.8
+            }).addTo(mapObs);
+
+            marker.bindPopup(`🔥 <b>${fire.title}</b>`);
+            layers.wildfire.push(marker);
+          }
+        });
+      } catch (e) {
+        document.getElementById("wildfire").innerHTML = "산불 데이터 수집 실패";
+      }
+    }
+
+    // ================================
+    // 4. ISS 위치 추적
+    // ================================
     async function loadISS() {
       try {
         const res = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
@@ -245,13 +327,10 @@
       }
     }
     setInterval(loadISS, 5000);
-    loadISS();
 
     // ================================
-    // 데이터 수집 엔진
+    // 5. 지진 정보 (USGS)
     // ================================
-
-    // 1. 지진 정보
     async function loadEarthquake() {
       try {
         clearLayer(layers.earth);
@@ -259,9 +338,7 @@
         const data = await res.json();
 
         document.getElementById("earth").innerHTML = `
-          <div class="item">
-            지난 24시간 감지 (규모 4.5+): <span class="text-red-400 font-bold">${data.features.length}건</span>
-          </div>
+          <div class="item">지난 24시간 감지 (규모 4.5+): <span class="text-red-400 font-bold">${data.features.length}건</span></div>
         `;
 
         data.features.forEach(eq => {
@@ -275,12 +352,7 @@
             fillOpacity: 0.5
           }).addTo(mapObs);
 
-          marker.bindPopup(`
-            <b>지진 발생</b><br>
-            규모: <b>${mag}</b><br>
-            위치: ${eq.properties.place}
-          `);
-
+          marker.bindPopup(`<b>지진 발생</b><br>규모: <b>${mag}</b><br>위치: ${eq.properties.place}`);
           layers.earth.push(marker);
         });
       } catch (e) {
@@ -288,7 +360,9 @@
       }
     }
 
-    // 2. 대기질 정보
+    // ================================
+    // 6. 대기질 정보 (Open-Meteo)
+    // ================================
     async function loadAir() {
       clearLayer(layers.air);
       const cities = [
@@ -299,7 +373,6 @@
       ];
 
       let html = "";
-
       for (const city of cities) {
         try {
           const res = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${city.lat}&longitude=${city.lon}&current=us_aqi`);
@@ -325,21 +398,16 @@
 
           marker.bindPopup(`<b>${city.name}</b><br>대기질 지수: ${aqi} (${statusText})`);
           layers.air.push(marker);
-
         } catch (e) {
-          html += `
-            <div class="item flex justify-between">
-              <span>${city.name}</span>
-              <span class="text-gray-500">연결 불가</span>
-            </div>
-          `;
+          html += `<div class="item flex justify-between"><span>${city.name}</span><span class="text-gray-500">연결 불가</span></div>`;
         }
       }
-
       document.getElementById("air").innerHTML = html;
     }
 
-    // 3. 우주 기상
+    // ================================
+    // 7. 우주 기상 (NOAA)
+    // ================================
     async function loadSolar() {
       try {
         const res = await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json");
@@ -350,29 +418,26 @@
         const colorClass = kp >= 5 ? "text-red-400" : kp >= 3 ? "text-yellow-400" : "text-green-400";
 
         document.getElementById("solar").innerHTML = `
-          <div class="item flex justify-between">
-            <span>Kp 지수:</span>
-            <span class="text-yellow-400 font-bold">${kp}</span>
-          </div>
-          <div class="flex justify-between mt-1">
-            <span>태양 활동 상태:</span>
-            <span class="${colorClass} font-bold">${status}</span>
-          </div>
+          <div class="item flex justify-between"><span>Kp 지수:</span><span class="text-yellow-400 font-bold">${kp}</span></div>
+          <div class="flex justify-between mt-1"><span>태양 활동 상태:</span><span class="${colorClass} font-bold">${status}</span></div>
         `;
       } catch (e) {
         document.getElementById("solar").innerHTML = "우주 기상 데이터 실패";
       }
     }
 
-    // 실행
+    // 통합 실행
     function runGlobalSystems() {
+      loadSunMoon();
+      loadWildfire();
       loadEarthquake();
       loadAir();
       loadSolar();
+      loadISS();
     }
 
     runGlobalSystems();
-    setInterval(runGlobalSystems, 600000);
+    setInterval(runGlobalSystems, 600000); // 10분 마다 전체 갱신
   </script>
 </body>
 
