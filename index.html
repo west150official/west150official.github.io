@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GLOBAL MONITOR</title>
+  <title>글로벌 모니터링 시스템</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -18,7 +18,7 @@
       margin: 0;
       background: #02040a;
       color: #e2e8f0;
-      font-family: 'JetBrains Mono', monospace, sans-serif;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
       overflow: hidden;
     }
 
@@ -34,7 +34,7 @@
     }
 
     .title {
-      letter-spacing: 3px;
+      letter-spacing: 2px;
     }
 
     .item {
@@ -63,80 +63,82 @@
 
   <div class="grid grid-cols-12 h-screen">
 
-    <!-- LEFT PANEL -->
+    <!-- 왼쪽 패널 -->
     <div class="col-span-3 p-3 space-y-3 overflow-y-auto h-screen">
 
       <div class="panel rounded-xl p-4">
         <h1 class="text-xl font-black text-cyan-400 title">
-          GLOBAL <span class="text-white">MONITOR</span>
+          지구 종합 <span class="text-white">모니터링</span>
         </h1>
         <div class="flex items-center gap-2 text-xs mt-2">
           <div class="dot"></div>
-          <span id="clock">SYNCING...</span>
+          <span id="clock" class="text-cyan-200 font-mono">한국 시간 동기화 중...</span>
         </div>
       </div>
 
-      <!-- EARTH -->
+      <!-- 지진 정보 -->
       <div class="panel rounded-xl p-3">
-        <h2 class="text-red-400 font-bold text-sm">🌍 EARTH EVENTS</h2>
-        <div id="earth" class="text-xs mt-2">SYNCING...</div>
+        <h2 class="text-red-400 font-bold text-sm">🌍 지진 활동 (M4.5+)</h2>
+        <div id="earth" class="text-xs mt-2">동기화 중...</div>
       </div>
 
-      <!-- AIR -->
+      <!-- 대기질 정보 -->
       <div class="panel rounded-xl p-3">
-        <h2 class="text-green-400 font-bold text-sm">🌫 AIR QUALITY</h2>
-        <div id="air" class="text-xs mt-2">SYNCING...</div>
+        <h2 class="text-green-400 font-bold text-sm">🌫 공기질 지수 (AQI)</h2>
+        <div id="air" class="text-xs mt-2">동기화 중...</div>
       </div>
 
-      <!-- VOLCANO -->
+      <!-- 화산 정보 -->
       <div class="panel rounded-xl p-3">
-        <h2 class="text-orange-400 font-bold text-sm">🌋 VOLCANO</h2>
-        <div id="volcano" class="text-xs mt-2">SYNCING...</div>
+        <h2 class="text-orange-400 font-bold text-sm">🌋 화산 활동</h2>
+        <div id="volcano" class="text-xs mt-2">동기화 중...</div>
       </div>
 
-      <!-- OCEAN -->
+      <!-- 해양 정보 -->
       <div class="panel rounded-xl p-3">
-        <h2 class="text-blue-400 font-bold text-sm">🌊 OCEAN</h2>
-        <div id="ocean" class="text-xs mt-2">SYNCING...</div>
+        <h2 class="text-blue-400 font-bold text-sm">🌊 해양 상태</h2>
+        <div id="ocean" class="text-xs mt-2">동기화 중...</div>
       </div>
 
-      <!-- STORM -->
+      <!-- 태풍/열대저기압 정보 -->
       <div class="panel rounded-xl p-3">
-        <h2 class="text-purple-400 font-bold text-sm">🌪 STORM</h2>
-        <div id="storm" class="text-xs mt-2">SYNCING...</div>
+        <h2 class="text-purple-400 font-bold text-sm">🌪 태풍 및 폭풍</h2>
+        <div id="storm" class="text-xs mt-2">동기화 중...</div>
       </div>
 
-      <!-- SPACE -->
+      <!-- 우주 기상 -->
       <div class="panel rounded-xl p-3">
-        <h2 class="text-yellow-400 font-bold text-sm">☀ SPACE WEATHER</h2>
-        <div id="solar" class="text-xs mt-2">SYNCING...</div>
+        <h2 class="text-yellow-400 font-bold text-sm">☀ 우주 기상 (태풍/자기장)</h2>
+        <div id="solar" class="text-xs mt-2">동기화 중...</div>
       </div>
 
-      <!-- AI REPORT -->
+      <!-- AI 지구 보고서 -->
       <div class="panel rounded-xl p-3">
-        <h2 class="text-pink-400 font-bold text-sm">🧠 AI EARTH REPORT</h2>
-        <div id="ai" class="text-xs mt-3 leading-5">WAITING FOR TRIGGER</div>
+        <h2 class="text-pink-400 font-bold text-sm">🧠 AI 지구 종합 진단</h2>
+        <div id="ai" class="text-xs mt-3 leading-5">분석 대기 중</div>
         <button onclick="generatePlanetReport()" class="mt-3 w-full py-2 bg-cyan-700 hover:bg-cyan-600 transition-colors rounded text-xs text-white font-bold">
-          GENERATE AI REPORT
+          AI 진단 보고서 생성
         </button>
       </div>
 
     </div>
 
-    <!-- MAP -->
+    <!-- 오른쪽 지도 영역 -->
     <div class="col-span-9 relative">
       <div id="map"></div>
 
+      <!-- 우측 상단 ISS 위치 표시 -->
       <div class="absolute top-4 right-4 z-[1000] panel rounded-xl p-3 text-xs">
-        <div class="text-cyan-400 font-bold">LIVE TRACKING</div>
-        <div id="iss">ISS SYNCING...</div>
+        <div class="text-cyan-400 font-bold mb-1">실시간 위성 추적 (KST)</div>
+        <div id="iss">국제우주정거장(ISS) 동기화 중...</div>
       </div>
 
+      <!-- 좌측 하단 지도 범례 -->
       <div class="absolute bottom-4 left-4 z-[1000] panel rounded-xl p-3 text-xs leading-relaxed">
-        🔴 Earthquake<br>
-        🟢 AQI<br>
-        🔵 ISS Position<br>
-        🟠 Active Storm
+        🔴 지진 발생지<br>
+        🟢 주요 도시 대기질<br>
+        🔵 ISS (우주정거장)<br>
+        🟠 활동 중인 태풍
       </div>
     </div>
 
@@ -144,11 +146,11 @@
 
   <script>
     // ================================
-    // MAP & LAYER INITIALIZATION
+    // 지도 및 레이어 초기화
     // ================================
     const map = L.map('map').setView([20, 0], 2);
 
-    // Dark Map Tile Layer (CartoDB Dark Matter)
+    // 어두운 테마 지도 타일 (CartoDB Dark Matter)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap &copy; CARTO',
       maxZoom: 19
@@ -167,11 +169,23 @@
     }
 
     // ================================
-    // CLOCK & ISS ENGINE
+    // 한국 표준시(KST) 시계 및 ISS 추적 로직
     // ================================
     function updateClock() {
       const now = new Date();
-      document.getElementById('clock').innerText = now.toUTCString();
+      // 'Asia/Seoul' 타임존 명시 및 한국어 형식 지정
+      const kstString = now.toLocaleString('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      
+      document.getElementById('clock').innerText = `KST ${kstString}`;
     }
     setInterval(updateClock, 1000);
     updateClock();
@@ -183,8 +197,8 @@
         const { latitude, longitude, altitude, velocity } = data;
 
         document.getElementById('iss').innerHTML = `
-          ISS LAT: ${latitude.toFixed(2)} | LON: ${longitude.toFixed(2)}<br>
-          ALT: ${altitude.toFixed(0)} km | VEL: ${velocity.toFixed(0)} km/h
+          위도: ${latitude.toFixed(2)}° | 경도: ${longitude.toFixed(2)}°<br>
+          고도: ${altitude.toFixed(0)} km | 속도: ${velocity.toFixed(0)} km/h
         `;
 
         if (layers.iss) {
@@ -196,20 +210,20 @@
             fillColor: '#60a5fa',
             fillOpacity: 0.8
           }).addTo(map);
-          layers.iss.bindPopup('<b>🛰 INTERNATIONAL SPACE STATION</b>');
+          layers.iss.bindPopup('<b>🛰 국제우주정거장 (ISS)</b>');
         }
       } catch (e) {
-        document.getElementById('iss').innerText = 'ISS DATA OFFLINE';
+        document.getElementById('iss').innerText = 'ISS 데이터 연결 불가';
       }
     }
     setInterval(loadISS, 5000);
     loadISS();
 
     // ================================
-    // GLOBAL DATA ENGINE
+    // 글로벌 데이터 수집 엔진
     // ================================
 
-    // 1. Earthquake USGS
+    // 1. 지진 정보 (USGS)
     async function loadEarthquake() {
       try {
         clearLayer(layers.earth);
@@ -218,7 +232,7 @@
 
         document.getElementById("earth").innerHTML = `
           <div class="item">
-            M4.5+ EVENTS (24H): <span class="text-red-400 font-bold">${data.features.length}</span>
+            지난 24시간 감지 (규모 4.5+): <span class="text-red-400 font-bold">${data.features.length}건</span>
           </div>
         `;
 
@@ -234,26 +248,26 @@
           }).addTo(map);
 
           marker.bindPopup(`
-            <b>EARTHQUAKE</b><br>
-            Magnitude: <b>${mag}</b><br>
-            Location: ${eq.properties.place}
+            <b>지진 발생</b><br>
+            규모: <b>${mag}</b><br>
+            위치: ${eq.properties.place}
           `);
 
           layers.earth.push(marker);
         });
       } catch (e) {
-        document.getElementById("earth").innerHTML = "DATA ERROR";
+        document.getElementById("earth").innerHTML = "지진 데이터 수집 실패";
       }
     }
 
-    // 2. Air Quality
+    // 2. 주요 도시 대기질 (Open-Meteo)
     async function loadAir() {
       clearLayer(layers.air);
       const cities = [
-        { name: "SEOUL", lat: 37.56, lon: 126.97 },
-        { name: "TOKYO", lat: 35.6, lon: 139.6 },
-        { name: "NEW YORK", lat: 40.7, lon: -74 },
-        { name: "LONDON", lat: 51.5, lon: -0.1 }
+        { name: "서울", lat: 37.56, lon: 126.97 },
+        { name: "도쿄", lat: 35.6, lon: 139.6 },
+        { name: "뉴욕", lat: 40.7, lon: -74 },
+        { name: "런던", lat: 51.5, lon: -0.1 }
       ];
 
       let html = "";
@@ -265,11 +279,12 @@
           const aqi = data.current ? data.current.us_aqi : 'N/A';
 
           const colorClass = aqi > 100 ? 'text-red-400' : aqi > 50 ? 'text-yellow-400' : 'text-green-400';
+          const statusText = aqi > 100 ? '나쁨' : aqi > 50 ? '보통' : '좋음';
 
           html += `
             <div class="item flex justify-between">
               <span>${city.name}</span>
-              <span class="${colorClass}">${aqi} US AQI</span>
+              <span class="${colorClass}">${aqi} AQI (${statusText})</span>
             </div>
           `;
 
@@ -280,14 +295,14 @@
             fillOpacity: 0.6
           }).addTo(map);
 
-          marker.bindPopup(`<b>${city.name}</b><br>AQI: ${aqi}`);
+          marker.bindPopup(`<b>${city.name}</b><br>대기질 지수: ${aqi} (${statusText})`);
           layers.air.push(marker);
 
         } catch (e) {
           html += `
             <div class="item flex justify-between">
               <span>${city.name}</span>
-              <span class="text-gray-500">OFFLINE</span>
+              <span class="text-gray-500">연결 불가</span>
             </div>
           `;
         }
@@ -296,51 +311,51 @@
       document.getElementById("air").innerHTML = html;
     }
 
-    // 3. Solar Weather NOAA
+    // 3. 우주 기상 (NOAA)
     async function loadSolar() {
       try {
         const res = await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json");
         const data = await res.json();
         const kp = parseFloat(data[data.length - 1][1]);
 
-        const status = kp >= 5 ? "STORM" : kp >= 3 ? "ACTIVE" : "QUIET";
+        const status = kp >= 5 ? "지자기 폭풍" : kp >= 3 ? "활동적" : "조용함";
         const colorClass = kp >= 5 ? "text-red-400" : kp >= 3 ? "text-yellow-400" : "text-green-400";
 
         document.getElementById("solar").innerHTML = `
           <div class="item flex justify-between">
-            <span>Kp INDEX:</span>
+            <span>Kp 지수:</span>
             <span class="text-yellow-400 font-bold">${kp}</span>
           </div>
           <div class="flex justify-between mt-1">
-            <span>STATUS:</span>
+            <span>태양 활동 상태:</span>
             <span class="${colorClass} font-bold">${status}</span>
           </div>
         `;
       } catch (e) {
-        document.getElementById("solar").innerHTML = "NO DATA";
+        document.getElementById("solar").innerHTML = "우주 기상 데이터 실패";
       }
     }
 
-    // 4. Volcano
+    // 4. 화산 활동
     async function loadVolcano() {
       document.getElementById("volcano").innerHTML = `
-        <div class="item">GLOBAL VOLCANIC ACTIVITY</div>
-        <div class="text-gray-400 mt-1">SOURCE: Smithsonian GVP</div>
+        <div class="item">전 세계 화산 활동 모니터링</div>
+        <div class="text-gray-400 mt-1">출처: 스미소니언 GVP</div>
       `;
     }
 
-    // 5. Ocean
+    // 5. 해양 상태
     async function loadOcean() {
       document.getElementById("ocean").innerHTML = `
-        <div class="item">SEA MONITOR</div>
+        <div class="item">해수면 및 해양 관측</div>
         <div class="flex justify-between mt-1">
-          <span>SOURCE: NOAA</span>
-          <span class="text-green-400">NORMAL</span>
+          <span>출처: NOAA</span>
+          <span class="text-green-400">정상 범위</span>
         </div>
       `;
     }
 
-    // 6. Storm
+    // 6. 태풍/폭풍 (NOAA NHC)
     async function loadStorm() {
       try {
         clearLayer(layers.storm);
@@ -349,7 +364,7 @@
         const storms = data.activeStorms || [];
 
         document.getElementById("storm").innerHTML = `
-          <div class="item">ACTIVE STORMS: <span class="text-purple-400 font-bold">${storms.length}</span></div>
+          <div class="item">현재 활동 중인 폭풍: <span class="text-purple-400 font-bold">${storms.length}개</span></div>
         `;
 
         storms.forEach(storm => {
@@ -367,12 +382,12 @@
         });
       } catch (e) {
         document.getElementById("storm").innerHTML = `
-          <div class="item">ACTIVE STORMS: <span class="text-gray-400 font-bold">0</span></div>
+          <div class="item">현재 활동 중인 폭풍: <span class="text-gray-400 font-bold">0개</span></div>
         `;
       }
     }
 
-    // RUN ALL SYSTEMS
+    // 전 시스템 데이터 불러오기
     function runGlobalSystems() {
       loadEarthquake();
       loadAir();
@@ -383,10 +398,10 @@
     }
 
     runGlobalSystems();
-    setInterval(runGlobalSystems, 600000); // Refresh every 10 mins
+    setInterval(runGlobalSystems, 600000); // 10분마다 갱신
 
     // ===================================
-    // AI PLANETARY INTELLIGENCE ENGINE
+    // AI 지구 진단 엔진 (한국어 응답 설정)
     // ===================================
     function collectPlanetData() {
       return {
@@ -402,26 +417,26 @@
       const state = collectPlanetData();
       const aiContainer = document.getElementById("ai");
 
-      aiContainer.innerHTML = `<div class="text-cyan-400 animate-pulse">AI ANALYZING DATA...</div>`;
+      aiContainer.innerHTML = `<div class="text-cyan-400 animate-pulse">AI가 실시간 데이터를 분석 중입니다...</div>`;
 
       const prompt = `
-You are a planetary monitoring AI.
-Analyze this live planetary telemetry data and return a concise condition report.
+당신은 지구 환경 모니터링 AI 시스템입니다.
+아래 제공된 실시간 지구 관측 데이터를 분석하고 한국어로 요약 진단 보고서를 작성하세요.
 
-Rules:
-- Do not predict disasters.
-- Only summarize current global conditions concisely.
-- Keep output formatted cleanly with Markdown or clear section breaks.
+수칙:
+- 절대 재난을 자의적으로 예측하지 마세요.
+- 현재 수집된 관측 데이터 상태만을 명확하고 정돈된 한글로 요약하세요.
+- 친절하고 전문적인 어조로 보고서를 작성하세요.
 
-LIVE DATA:
+실시간 데이터:
 ${JSON.stringify(state, null, 2)}
 
-Format:
-🌍 EARTH: [Brief status]
-🌫 ATMOSPHERE: [Brief status]
-🌪 STORMS: [Brief status]
-☀ SPACE: [Brief status]
-📌 OVERALL SUMMARY: [Short conclusion]
+반드시 다음 형식으로 한국어로 답변하세요:
+🌍 지각 활동: [요약 내용]
+🌫 대기 환경: [요약 내용]
+🌪 기상/폭풍: [요약 내용]
+☀ 우주 기상: [요약 내용]
+📌 종합 진단: [한 줄 결론]
 `;
 
       try {
@@ -435,15 +450,15 @@ Format:
           })
         });
 
-        if (!response.ok) throw new Error("Local LLM Server unreachable");
+        if (!response.ok) throw new Error("로컬 AI 서버 연결 불가");
 
         const result = await response.json();
         aiContainer.innerHTML = `<div class="leading-relaxed text-slate-200">${result.response.replace(/\n/g, "<br>")}</div>`;
 
       } catch (e) {
         aiContainer.innerHTML = `
-          <span class="text-red-400 font-bold">LOCAL AI OFFLINE</span><br>
-          <span class="text-gray-400 text-[10px]">Ensure Ollama is running:</span><br>
+          <span class="text-red-400 font-bold">로컬 AI 오프라인</span><br>
+          <span class="text-gray-400 text-[10px]">Ollama 서버를 실행해주세요:</span><br>
           <code class="bg-black/50 px-1 py-0.5 rounded text-cyan-300">ollama serve</code>
         `;
       }
