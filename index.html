@@ -3,102 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GLOBAL FLOW - Hazard Monitor</title>
+    <title>GLOBAL FLOW - Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 지도 엔진: Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'JetBrains Mono', monospace;
-            background-color: #02040a;
-            color: #e2e8f0;
-            height: 100vh;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
+        body { font-family: 'JetBrains Mono', monospace; background-color: #02040a; color: #e2e8f0; height: 100vh; margin: 0; display: flex; flex-direction: column; overflow: hidden; }
         .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(51, 65, 85, 0.4); }
-        
-        /* 지도가 들어갈 컨테이너의 높이를 확실하게 설정 */
-        #map-container {
-            flex: 1; 
-            width: 100%;
-            position: relative;
-            min-height: 0; /* flex 자식의 높이 붕괴 방지 */
-        }
-        #map { 
-            position: absolute;
-            top: 0; bottom: 0; left: 0; right: 0;
-            background: #02040a; 
-        }
-
+        #main-content { flex: 1; display: grid; grid-template-columns: 4fr 8fr; gap: 8px; min-height: 0; }
+        #map { height: 100%; width: 100%; background: #02040a; }
+        .aqi-row { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 10px 0; }
+        .status-good { color: #10b981; }
+        .status-moderate { color: #f59e0b; }
+        .status-unhealthy { color: #ef4444; }
         .dot-live { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        
-        /* 팝업 스타일 수정 */
-        .leaflet-popup-content-wrapper { background: #0f172a !important; color: white !important; border: 1px solid #334155; }
-        .leaflet-popup-tip { background: #0f172a !important; }
     </style>
 </head>
 <body class="p-2 gap-2">
 
     <!-- HEADER -->
-    <header class="flex justify-between items-center bg-slate-900/80 p-3 rounded-xl border border-white/5 shadow-2xl">
+    <header class="flex justify-between items-center bg-slate-900/80 p-3 rounded-xl border border-white/5">
         <div class="flex items-center gap-4">
-            <h1 class="text-xl font-bold italic tracking-tighter text-blue-500 uppercase leading-none">Global Flow <span class="text-white">Hazard v2</span></h1>
+            <h1 class="text-xl font-bold italic text-blue-500 uppercase">Global Flow <span class="text-white">Command Center</span></h1>
             <div class="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full border border-white/5">
                 <div class="dot-live"></div>
-                <span class="text-[10px] font-bold">SYSTEM LIVE</span>
+                <span class="text-[10px] font-bold uppercase tracking-widest">Orbital & Hazard Syncing</span>
             </div>
         </div>
-        <div id="refresh-countdown" class="text-[10px] text-slate-500 font-bold">REFRESHING IN 10:00</div>
+        <div class="flex items-center gap-6">
+            <div class="text-right">
+                <p class="text-[8px] text-slate-500 font-bold">MARKET SENTIMENT</p>
+                <p id="fear-greed" class="text-xs font-bold text-orange-400">LOADING...</p>
+            </div>
+            <div id="refresh-countdown" class="text-[10px] text-slate-500 font-bold">00:00</div>
+        </div>
     </header>
 
-    <!-- TOP BAR -->
+    <!-- TOP BAR (TIMES) -->
     <div class="grid grid-cols-3 gap-2 flex-none">
-        <div class="glass rounded-xl p-4 border-l-4 border-blue-500">
-            <p class="text-[10px] text-slate-500 font-bold mb-1">SEOUL / KOREA</p>
-            <div class="flex justify-between items-end">
-                <div>
-                    <p id="time-kr" class="text-2xl font-bold leading-none">00:00:00</p>
-                    <p id="weather-kr" class="text-[11px] text-blue-300 mt-2 font-bold">Loading...</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-[9px] text-slate-500 font-bold uppercase mb-1">USD/KRW</p>
-                    <p id="val-fx" class="text-xl font-bold text-emerald-400 leading-none">----.--</p>
-                </div>
-            </div>
+        <div class="glass rounded-xl p-3 flex justify-between items-center border-l-4 border-blue-500">
+            <div><p class="text-[9px] text-slate-500 font-bold uppercase">Seoul</p><p id="time-kr" class="text-xl font-bold">00:00:00</p></div>
+            <p id="weather-kr" class="text-[10px] font-bold text-blue-400">--°C</p>
         </div>
-        <div class="glass rounded-xl p-4 border-l-4 border-red-500">
-            <p class="text-[10px] text-slate-500 font-bold mb-1">NEW YORK / USA</p>
-            <p id="time-us" class="text-2xl font-bold text-red-400 leading-none">00:00:00</p>
-            <p id="weather-us" class="text-[11px] text-red-300 mt-2 font-bold">Loading...</p>
+        <div class="glass rounded-xl p-3 flex justify-between items-center border-l-4 border-red-500">
+            <div><p class="text-[9px] text-slate-500 font-bold uppercase">New York</p><p id="time-us" class="text-xl font-bold text-red-400">00:00:00</p></div>
+            <p id="weather-us" class="text-[10px] font-bold text-red-300">--°C</p>
         </div>
-        <div class="glass rounded-xl p-4 border-l-4 border-amber-500">
-            <p class="text-[10px] text-slate-500 font-bold mb-1">LONDON / UK</p>
-            <p id="time-uk" class="text-2xl font-bold text-amber-400 leading-none">00:00:00</p>
-            <p id="weather-uk" class="text-[11px] text-amber-300 mt-2 font-bold">Loading...</p>
+        <div class="glass rounded-xl p-3 flex justify-between items-center border-l-4 border-amber-500">
+            <div><p class="text-[9px] text-slate-500 font-bold uppercase">London</p><p id="time-uk" class="text-xl font-bold text-amber-400">00:00:00</p></div>
+            <p id="weather-uk" class="text-[10px] font-bold text-amber-200">--°C</p>
         </div>
     </div>
 
-    <!-- MAIN MAP AREA -->
-    <div id="map-container" class="glass rounded-xl overflow-hidden shadow-2xl">
-        <div id="map"></div>
-        <!-- LEGEND -->
-        <div class="absolute bottom-4 left-4 z-[1000] bg-black/90 p-3 rounded-lg border border-white/10 flex flex-col gap-2">
-            <h3 class="text-[10px] font-bold text-slate-400 mb-1 tracking-widest uppercase">Global Legend</h3>
-            <div class="flex items-center gap-3 text-[10px]"><span class="w-3 h-3 rounded-full bg-red-600 shadow-[0_0_5px_red]"></span> Earthquake (Mag 4.5+)</div>
-            <div class="flex items-center gap-3 text-[10px]"><span class="w-3 h-3 rounded-full bg-blue-500"></span> System Node</div>
-        </div>
-    </div>
+    <!-- MAIN SECTION -->
+    <main id="main-content">
+        <!-- LEFT: AIR QUALITY PANEL -->
+        <section class="glass rounded-xl p-4 overflow-hidden flex flex-col">
+            <h2 class="text-xs font-bold uppercase tracking-widest text-emerald-400 mb-4 pb-2 border-b border-white/10">Air Intelligence</h2>
+            <div id="aqi-list" class="flex-grow overflow-y-auto"></div>
+        </section>
+
+        <!-- RIGHT: HAZARD MAP & ISS TRACKER -->
+        <section class="glass rounded-xl overflow-hidden relative">
+            <div id="map"></div>
+            <!-- ISS INFO BOX -->
+            <div class="absolute top-4 right-4 z-[1000] bg-blue-900/80 p-2 rounded border border-blue-400 text-[9px] text-white">
+                <p class="font-bold border-b border-blue-400/50 mb-1">ISS LIVE LOCATION</p>
+                <p id="iss-coords">Syncing satellite...</p>
+            </div>
+            <div class="absolute bottom-4 left-4 z-[1000] bg-black/80 p-2 rounded border border-white/10 text-[9px]">
+                <div class="flex items-center gap-2 mb-1 text-red-500 font-bold uppercase"><span class="w-2 h-2 rounded-full bg-red-600"></span> Earthquake</div>
+                <div class="flex items-center gap-2 text-blue-400 font-bold uppercase"><span class="w-2 h-2 rounded-full bg-blue-400"></span> ISS Tracker</div>
+            </div>
+        </section>
+    </main>
 
     <script>
         const REFRESH_MS = 600000;
         let countdown = REFRESH_MS / 1000;
-        let map;
+        let map, issMarker;
 
         window.onload = () => {
             initMap();
@@ -106,79 +91,87 @@
             setInterval(updateClocks, 1000);
             setInterval(tick, 1000);
             setInterval(updateAll, REFRESH_MS);
+            setInterval(updateISS, 5000); // ISS는 5초마다 위치 갱신
         };
 
         function initMap() {
-            // 지도가 그려질 영역을 초기화
-            map = L.map('map', { 
-                center: [20, 0], 
-                zoom: 2.5, 
-                zoomControl: false, 
-                attributionControl: false 
-            });
-
-            // 타일 주소를 더 안정적인 주소로 변경 (CartoDB Dark Matter)
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                subdomains: 'abcd',
-                maxZoom: 19
-            }).addTo(map);
-
-            // 지도가 화면 크기에 맞게 다시 계산되도록 강제 명령
-            setTimeout(() => { map.invalidateSize(); }, 500);
+            map = L.map('map', { center: [20, 10], zoom: 2.5, zoomControl: false, attributionControl: false });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+            
+            // ISS 마커 초기화 (파란색 원)
+            issMarker = L.circleMarker([0, 0], { radius: 6, color: '#3b82f6', weight: 2, fillColor: '#3b82f6', fillOpacity: 0.8 }).addTo(map);
+            issMarker.bindPopup("ISS (International Space Station)");
         }
 
-        function updateAll() {
-            updateFX();
+        async function updateAll() {
             updateWeather();
             updateHazards();
+            updateAirQuality();
+            updateFearGreed();
         }
 
-        async function updateFX() {
+        // 1. ISS 위치 추적기
+        async function updateISS() {
             try {
-                const res = await fetch('https://open.er-api.com/v6/latest/USD');
+                const res = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
                 const data = await res.json();
-                document.getElementById('val-fx').textContent = data.rates.KRW.toFixed(2);
+                const pos = [data.latitude, data.longitude];
+                issMarker.setLatLng(pos);
+                document.getElementById('iss-coords').textContent = `LAT: ${data.latitude.toFixed(2)} / LON: ${data.longitude.toFixed(2)}`;
             } catch (e) {}
         }
 
-        async function updateWeather() {
-            const cities = [
-                { id: 'kr', lat: 37.56, lon: 126.97 },
-                { id: 'us', lat: 40.71, lon: -74.00 },
-                { id: 'uk', lat: 51.50, lon: -0.12 }
-            ];
+        // 2. 공포와 탐욕 지수
+        async function updateFearGreed() {
+            try {
+                const res = await fetch('https://api.alternative.me/fng/');
+                const data = await res.json();
+                const value = data.data[0].value;
+                const classification = data.data[0].value_classification;
+                const el = document.getElementById('fear-greed');
+                el.textContent = `${value} - ${classification.toUpperCase()}`;
+                // 상태에 따라 색상 변경
+                el.className = `text-xs font-bold ${value < 40 ? 'text-red-500' : value > 60 ? 'text-emerald-500' : 'text-orange-400'}`;
+            } catch (e) {}
+        }
 
-            cities.forEach(async (city) => {
+        // --- 기존 기능 유지 ---
+        async function updateAirQuality() {
+            const cities = [{ name: 'Seoul', lat: 37.56, lon: 126.97 }, { name: 'Beijing', lat: 39.9, lon: 116.4 }, { name: 'New York', lat: 40.71, lon: -74 }, { name: 'Tokyo', lat: 35.68, lon: 139.6 }, { name: 'London', lat: 51.5, lon: -0.1 }];
+            const listEl = document.getElementById('aqi-list');
+            listEl.innerHTML = '';
+            for (const city of cities) {
                 try {
-                    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true`);
+                    const res = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${city.lat}&longitude=${city.lon}&current=us_aqi`);
                     const data = await res.json();
-                    const temp = data.current_weather.temperature;
-                    const codes = {0: "Clear", 1: "Mainly Clear", 2: "Partly Cloudy", 3: "Overcast", 45: "Fog", 61: "Rain"};
-                    const status = codes[data.current_weather.weathercode] || "Active";
-                    document.getElementById(`weather-${city.id}`).textContent = `${temp}°C / ${status}`;
+                    const aqi = data.current.us_aqi;
+                    const color = aqi > 100 ? 'status-unhealthy' : aqi > 50 ? 'status-moderate' : 'status-good';
+                    listEl.innerHTML += `<div class="aqi-row flex justify-between"><div><p class="text-xs font-bold">${city.name}</p></div><div class="text-right"><p class="text-lg font-black ${color}">${aqi}</p></div></div>`;
                 } catch (e) {}
-            });
+            }
         }
 
         async function updateHazards() {
             try {
                 const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson');
                 const data = await res.json();
-                
-                // 기존 마커 삭제
-                map.eachLayer(l => { if (l instanceof L.CircleMarker) map.removeLayer(l); });
-
+                map.eachLayer(l => { if (l instanceof L.CircleMarker && l !== issMarker) map.removeLayer(l); });
                 data.features.forEach(f => {
                     const [lon, lat] = f.geometry.coordinates;
-                    L.circleMarker([lat, lon], {
-                        radius: Math.max(f.properties.mag * 2, 4),
-                        color: '#ef4444',
-                        weight: 1,
-                        fillColor: '#ef4444',
-                        fillOpacity: 0.5
-                    }).addTo(map).bindPopup(`<b>Magnitude ${f.properties.mag}</b><br>${f.properties.place}`);
+                    L.circleMarker([lat, lon], { radius: f.properties.mag * 1.5, color: '#ef4444', weight: 1, fillOpacity: 0.4 }).addTo(map);
                 });
             } catch (e) {}
+        }
+
+        function updateWeather() {
+            const cities = [{ id: 'kr', lat: 37.56, lon: 126.97 }, { id: 'us', lat: 40.71, lon: -74.00 }, { id: 'uk', lat: 51.50, lon: -0.12 }];
+            cities.forEach(async (city) => {
+                try {
+                    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true`);
+                    const data = await res.json();
+                    document.getElementById(`weather-${city.id}`).textContent = `${data.current_weather.temperature}°C`;
+                } catch (e) {}
+            });
         }
 
         function updateClocks() {
@@ -193,7 +186,7 @@
             if (countdown <= 0) countdown = REFRESH_MS / 1000;
             const m = Math.floor(countdown / 60).toString().padStart(2, '0');
             const s = (countdown % 60).toString().padStart(2, '0');
-            document.getElementById('refresh-countdown').textContent = `REFRESHING IN ${m}:${s}`;
+            document.getElementById('refresh-countdown').textContent = `SYNC: ${m}:${s}`;
         }
     </script>
 </body>
