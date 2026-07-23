@@ -6,6 +6,9 @@
     <title>GLOBAL FLOW - Intelligence Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Map Engine -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -25,160 +28,139 @@
         .news-card { border-bottom: 1px solid rgba(51, 65, 85, 0.2); transition: all 0.2s; padding: 12px; opacity: 0; animation: fadeIn 0.4s ease forwards; }
         .news-card:hover { background: rgba(255, 255, 255, 0.05); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-        @media (prefers-reduced-motion: reduce) {
-            .news-card { animation: none; opacity: 1; }
-            .animate-pulse { animation: none; }
-        }
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-
-        /* skeleton loading */
+        
+        /* Skeleton Loading */
         .skel { background: linear-gradient(90deg, rgba(51,65,85,0.25) 25%, rgba(51,65,85,0.45) 37%, rgba(51,65,85,0.25) 63%); background-size: 400% 100%; animation: skel 1.4s ease infinite; border-radius: 6px; }
         @keyframes skel { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
 
-        /* status dot states */
+        /* Status Dots */
         .dot-live { background: #10b981; }
         .dot-error { background: #ef4444; }
         .dot-loading { background: #f59e0b; }
 
-        /* breaking news ticker */
-        .ticker-wrap { overflow: hidden; white-space: nowrap; position: relative; }
-        .ticker-track { display: inline-flex; animation: ticker-scroll 60s linear infinite; will-change: transform; }
-        .ticker-wrap:hover .ticker-track { animation-play-state: paused; }
-        @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        @media (prefers-reduced-motion: reduce) { .ticker-track { animation: none; } }
+        /* Map styling */
+        #map { height: 100%; width: 100%; background: #02040a; }
+        .leaflet-container { background: #02040a !important; }
 
-        /* 구글 번역기 스타일 강제 고정 */
-        #google_translate_element { height: 38px; overflow: hidden; border-radius: 8px; border: 1px solid #334155; background: #0f172a; }
-        .goog-te-banner-frame.skiptranslate, .goog-te-gadget span { display: none !important; }
-        .goog-te-gadget { color: transparent !important; font-size: 0 !important; }
-        .goog-te-combo { background: #0f172a !important; color: #fff !important; border: none !important; padding: 5px !important; font-size: 12px !important; outline: none !important; }
-        body { top: 0px !important; }
+        /* Translate element fix */
+        #google_translate_element { height: 34px; overflow: hidden; border-radius: 6px; border: 1px solid #334155; background: #0f172a; }
+        .goog-te-gadget-simple { background-color: transparent !important; border: none !important; padding: 4px !important; }
+        .goog-te-gadget-simple span { color: #cbd5e1 !important; font-size: 12px !important; }
+        
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
-<body class="p-3 md:p-6">
+<body class="p-3 md:p-4">
 
-    <!-- HEADER: TITLE, CLOCKS, TRANSLATE -->
-    <header class="max-w-[1800px] mx-auto mb-6">
-        <div class="flex flex-col lg:flex-row justify-between items-center gap-6 mb-6">
+    <header class="max-w-[1800px] mx-auto mb-4">
+        <div class="flex flex-col lg:flex-row justify-between items-center gap-4 mb-4">
             <div class="flex items-center gap-4">
-                <h1 class="text-4xl font-black italic tracking-tighter text-white">GLOBAL <span class="text-blue-500">FLOW</span></h1>
+                <h1 class="text-3xl font-black italic tracking-tighter text-white">GLOBAL <span class="text-blue-500">FLOW</span></h1>
                 <div id="google_translate_element"></div>
             </div>
 
-            <div class="flex gap-4 bg-slate-900/80 px-6 py-2 rounded-2xl border border-white/5 shadow-2xl">
-                <div class="text-center px-4">
-                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter mb-1">Seoul</p>
-                    <p id="time-kr" class="text-base font-mono font-bold text-white leading-none">00:00:00</p>
+            <div class="flex gap-4 bg-slate-900/80 px-4 py-2 rounded-xl border border-white/5 shadow-2xl">
+                <div class="text-center px-3 border-r border-slate-800">
+                    <p class="text-[8px] text-slate-500 font-bold uppercase mb-1">Seoul</p>
+                    <p id="time-kr" class="text-sm font-mono font-bold text-white leading-none">00:00:00</p>
                 </div>
-                <div class="text-center px-4 border-l border-slate-800">
-                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter mb-1">New York</p>
-                    <p id="time-us" class="text-base font-mono font-bold text-blue-400 leading-none">00:00:00</p>
+                <div class="text-center px-3 border-r border-slate-800">
+                    <p class="text-[8px] text-slate-500 font-bold uppercase mb-1">New York</p>
+                    <p id="time-us" class="text-sm font-mono font-bold text-blue-400 leading-none">00:00:00</p>
                 </div>
-                <div class="text-center px-4 border-l border-slate-800">
-                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter mb-1">London</p>
-                    <p id="time-uk" class="text-base font-mono font-bold text-amber-400 leading-none">00:00:00</p>
+                <div class="text-center px-3">
+                    <p class="text-[8px] text-slate-500 font-bold uppercase mb-1">London</p>
+                    <p id="time-uk" class="text-sm font-mono font-bold text-amber-400 leading-none">00:00:00</p>
                 </div>
             </div>
         </div>
 
-        <!-- BREAKING NEWS TICKER -->
-        <div class="glass rounded-2xl border border-white/5 flex items-center gap-3 px-4 py-2.5">
-            <span class="flex items-center gap-1.5 text-[10px] font-black tracking-widest text-red-400 uppercase shrink-0">
-                <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> BREAKING
-            </span>
-            <div class="ticker-wrap flex-1">
-                <div id="ticker-track" class="ticker-track text-[13px] font-medium text-slate-300">
-                    <span class="px-8 text-slate-500">Loading headlines…</span>
-                </div>
+        <!-- INTEGRATED MARKET DATA BOARD -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 bg-white/5 p-2 rounded-xl border border-white/5">
+            <div class="flex flex-col items-center p-2 glass rounded-xl">
+                <span class="text-[9px] font-bold text-slate-500 uppercase mb-1">USD/KRW</span>
+                <span id="val-usd" class="text-lg font-mono font-bold text-emerald-400">----.--</span>
+            </div>
+            <div class="flex flex-col items-center p-2 glass rounded-xl">
+                <span class="text-[9px] font-bold text-slate-500 uppercase mb-1">KOSPI</span>
+                <span id="val-kospi" class="text-lg font-mono font-bold text-slate-300">----.--</span>
+                <span id="chg-kospi" class="text-[9px] font-mono text-slate-500">--</span>
+            </div>
+            <div class="flex flex-col items-center p-2 glass rounded-xl">
+                <span class="text-[9px] font-bold text-slate-500 uppercase mb-1">NASDAQ</span>
+                <span id="val-nasdaq" class="text-lg font-mono font-bold text-slate-300">----.--</span>
+                <span id="chg-nasdaq" class="text-[9px] font-mono text-slate-500">--</span>
+            </div>
+            <div class="flex flex-col items-center p-2 glass rounded-xl">
+                <span class="text-[9px] font-bold text-slate-500 uppercase mb-1">Bitcoin (BTC)</span>
+                <span id="val-btc" class="text-lg font-mono font-bold text-orange-400">--.---</span>
+                <span id="chg-btc" class="text-[9px] font-mono text-slate-500">--</span>
+            </div>
+            <div class="flex flex-col items-center p-2 glass rounded-xl">
+                <span class="text-[9px] font-bold text-slate-500 uppercase mb-1">Ethereum (ETH)</span>
+                <span id="val-eth" class="text-lg font-mono font-bold text-indigo-400">--.---</span>
+                <span id="chg-eth" class="text-[9px] font-mono text-slate-500">--</span>
+            </div>
+            <div class="flex flex-col items-center p-2 glass rounded-xl">
+                <span class="text-[9px] font-bold text-slate-500 uppercase mb-1">S&P 500</span>
+                <span id="val-sp500" class="text-lg font-mono font-bold text-slate-300">----.--</span>
+                <span id="chg-sp500" class="text-[9px] font-mono text-slate-500">--</span>
             </div>
         </div>
     </header>
 
-    <!-- MAIN NEWS AREA (TOP) -->
-    <main class="max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <main class="max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-        <div class="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- KOREA FEED -->
+        <!-- NEWS FEED -->
+        <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-3">
             <section class="glass rounded-2xl overflow-hidden flex flex-col shadow-2xl">
-                <div class="p-4 bg-blue-500/10 border-b border-white/5 flex justify-between items-center">
-                    <h2 class="text-[11px] font-bold tracking-widest text-blue-400 uppercase">Korea Intelligence</h2>
+                <div class="p-3 bg-blue-500/10 border-b border-white/5 flex justify-between items-center">
+                    <h2 class="text-[10px] font-bold tracking-widest text-blue-400 uppercase">Korea Intelligence</h2>
                     <span id="status-news-kr" class="w-2 h-2 rounded-full dot-loading animate-pulse"></span>
                 </div>
                 <div id="news-kr" class="news-container"></div>
             </section>
 
-            <!-- US FEED -->
             <section class="glass rounded-2xl overflow-hidden flex flex-col shadow-2xl">
-                <div class="p-4 bg-red-500/10 border-b border-white/5 flex justify-between items-center">
-                    <h2 class="text-[11px] font-bold tracking-widest text-red-400 uppercase">USA Intelligence</h2>
+                <div class="p-3 bg-red-500/10 border-b border-white/5 flex justify-between items-center">
+                    <h2 class="text-[10px] font-bold tracking-widest text-red-400 uppercase">USA Intelligence</h2>
                     <span id="status-news-us" class="w-2 h-2 rounded-full dot-loading animate-pulse"></span>
                 </div>
                 <div id="news-us" class="news-container"></div>
             </section>
 
-            <!-- WORLD FEED -->
             <section class="glass rounded-2xl overflow-hidden flex flex-col shadow-2xl">
-                <div class="p-4 bg-emerald-500/10 border-b border-white/5 flex justify-between items-center">
-                    <h2 class="text-[11px] font-bold tracking-widest text-emerald-400 uppercase">Global Briefing</h2>
+                <div class="p-3 bg-emerald-500/10 border-b border-white/5 flex justify-between items-center">
+                    <h2 class="text-[10px] font-bold tracking-widest text-emerald-400 uppercase">Global Briefing</h2>
                     <span id="status-news-global" class="w-2 h-2 rounded-full dot-loading animate-pulse"></span>
                 </div>
                 <div id="news-global" class="news-container"></div>
             </section>
         </div>
 
-        <!-- WEATHER MAP (below the news, full width) -->
-        <div class="lg:col-span-12">
-            <div class="glass rounded-2xl overflow-hidden h-[420px] relative">
-                <div class="p-4 bg-black/40 border-b border-white/5 absolute top-0 w-full z-10 flex justify-between items-center">
-                    <h2 class="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Live Weather Globe</h2>
+        <!-- LIVE DISASTER MAP -->
+        <div class="lg:col-span-4 h-full">
+            <div class="glass rounded-2xl overflow-hidden h-[540px] relative flex flex-col">
+                <div class="p-3 bg-black/60 border-b border-white/5 absolute top-0 w-full z-[1000] flex justify-between items-center">
+                    <h2 class="text-[10px] font-bold tracking-widest text-red-400 uppercase flex items-center gap-2">
+                        <i data-lucide="activity" class="w-3 h-3"></i> Global Hazard Monitor
+                    </h2>
                     <span id="refresh-countdown" class="text-[9px] font-mono text-slate-500"></span>
                 </div>
-                <iframe width="100%" height="100%" src="https://embed.windy.com/embed2.html?lat=37.5&lon=127.0&zoom=3&level=surface&overlay=wind&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=false" frameborder="0"></iframe>
-            </div>
-        </div>
-
-        <!-- GLOBAL DISASTER WATCH (USGS earthquakes + GDACS alerts) -->
-        <div class="lg:col-span-12">
-            <div class="glass rounded-2xl overflow-hidden shadow-2xl">
-                <div class="p-4 bg-amber-500/10 border-b border-white/5 flex justify-between items-center">
-                    <h2 class="text-[11px] font-bold tracking-widest text-amber-400 uppercase">Global Disaster Watch</h2>
-                    <span id="status-disaster" class="w-2 h-2 rounded-full dot-loading animate-pulse"></span>
-                </div>
-                <div id="disaster-feed" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-px bg-white/5 max-h-[360px] overflow-y-auto"></div>
-            </div>
-        </div>
-
-        <!-- MARKET DATA BOARD -->
-        <div class="lg:col-span-12">
-            <div class="glass rounded-2xl border border-white/5 p-4">
-                <h2 class="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-3">Markets</h2>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div class="flex flex-col items-center p-3 bg-white/5 rounded-xl">
-                        <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">USD / KRW</span>
-                        <span id="val-usd" class="text-xl font-mono font-bold text-emerald-400">----.--</span>
+                <div id="map"></div>
+                <div class="absolute bottom-4 left-4 z-[1000] flex flex-col gap-1">
+                    <div class="flex items-center gap-2 bg-black/80 px-2 py-1 rounded border border-white/10 text-[9px]">
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span> Earthquake (>4.5)
                     </div>
-                    <div class="flex flex-col items-center p-3 bg-white/5 rounded-xl">
-                        <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">KOSPI</span>
-                        <span id="val-kospi" class="text-xl font-mono font-bold text-slate-300">----.--</span>
-                        <span id="chg-kospi" class="text-[10px] font-mono text-slate-500">&nbsp;</span>
-                    </div>
-                    <div class="flex flex-col items-center p-3 bg-white/5 rounded-xl">
-                        <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">KOSDAQ</span>
-                        <span id="val-kosdaq" class="text-xl font-mono font-bold text-slate-300">----.--</span>
-                        <span id="chg-kosdaq" class="text-[10px] font-mono text-slate-500">&nbsp;</span>
-                    </div>
-                    <div class="flex flex-col items-center p-3 bg-white/5 rounded-xl">
-                        <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">NASDAQ</span>
-                        <span id="val-nasdaq" class="text-xl font-mono font-bold text-slate-300">----.--</span>
-                        <span id="chg-nasdaq" class="text-[10px] font-mono text-slate-500">&nbsp;</span>
+                    <div class="flex items-center gap-2 bg-black/80 px-2 py-1 rounded border border-white/10 text-[9px]">
+                        <span class="w-2 h-2 rounded-full bg-orange-500"></span> Global Disaster (GDACS)
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- SCRIPTS -->
     <script type="text/javascript">
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({pageLanguage: 'auto', includedLanguages: 'ko,en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
@@ -187,270 +169,192 @@
     <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
     <script>
-        // Google News RSS has no CORS headers of its own, so the browser can't fetch it
-        // directly. We go through a couple of public CORS proxies, in order, and fall
-        // back to rss2json last since its free shared quota gets exhausted easily.
-        // If ALL of these ever go down at once, get a free key at https://rss2json.com/
-        // and add "&api_key=YOUR_KEY" to the rss2json branch below.
-        const REFRESH_INTERVAL_MS = 600000; // 10 min
+        const REFRESH_INTERVAL_MS = 600000;
         let secondsToRefresh = REFRESH_INTERVAL_MS / 1000;
-
-        // Keep last-good data per feed so a failed fetch doesn't wipe the UI
+        let map;
         const lastGoodNews = { 'news-kr': null, 'news-us': null, 'news-global': null };
 
-        // Escape any HTML so titles/authors from the feed can never inject markup
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str ?? '';
-            return div.innerHTML;
+        // 1. 초기화 (지도 및 데이터)
+        window.onload = () => {
+            lucide.createIcons();
+            initMap();
+            startIntervals();
+            fetchAllData();
+        };
+
+        function initMap() {
+            map = L.map('map', {
+                center: [20, 10],
+                zoom: 2,
+                zoomControl: false,
+                attributionControl: false
+            });
+
+            // CartoDB Dark Matter tiles (Terminal Style)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19
+            }).addTo(map);
         }
 
-        function setStatus(containerId, state) {
-            const dot = document.getElementById('status-' + containerId);
-            if (!dot) return;
-            dot.classList.remove('dot-live', 'dot-error', 'dot-loading');
-            dot.classList.add(state === 'ok' ? 'dot-live' : state === 'error' ? 'dot-error' : 'dot-loading');
+        function startIntervals() {
+            setInterval(() => {
+                updateClocks();
+                tickCountdown();
+            }, 1000);
+
+            setInterval(fetchAllData, REFRESH_INTERVAL_MS);
+            setInterval(updateMarkets, 300000); // 5분마다 시장 데이터
         }
 
-        function renderSkeleton(container) {
-            container.innerHTML = Array.from({ length: 6 }).map(() => `
-                <div class="news-card">
-                    <div class="skel h-2.5 w-16 mb-2"></div>
-                    <div class="skel h-3.5 w-full mb-1"></div>
-                    <div class="skel h-3.5 w-3/4"></div>
-                </div>
-            `).join('');
+        async function fetchAllData() {
+            getNews('속보 OR 정치 OR 경제 OR 재난', 'ko', 'news-kr');
+            getNews('US breaking news politics economy', 'en', 'news-us');
+            getNews('world international news geopolitics', 'en', 'news-global');
+            updateMarkets();
+            fetchDisasters();
         }
 
-        // 1. 뉴스 데이터 수집
-        // NOTE: Google News' /rss/search endpoint sorts by relevance, not by time —
-        // that's why broad keyword queries were surfacing old articles. Its plain
-        // /rss (and /rss/headlines/section/topic/...) feeds are the real "top
-        // stories" feed and are naturally recency-sorted, so we use those instead.
-        async function fetchAllNews() {
-            getNews('https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko', 'news-kr');
-            getNews('https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en', 'news-us');
-            getNews('https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en', 'news-global');
-        }
-
-        // Parse Google News RSS XML into our normalized item shape
-        function parseRssXml(xmlText) {
-            const xml = new DOMParser().parseFromString(xmlText, 'text/xml');
-            if (xml.querySelector('parsererror')) throw new Error('bad xml');
-            return Array.from(xml.querySelectorAll('item')).map(node => ({
-                title: node.querySelector('title')?.textContent || '',
-                link: node.querySelector('link')?.textContent || '',
-                pubDate: node.querySelector('pubDate')?.textContent || '',
-                author: node.getElementsByTagName('source')[0]?.textContent || 'SOURCE'
-            })).filter(item => item.title);
-        }
-
-        async function getNews(rssUrl, containerId) {
+        // 2. 뉴스 데이터 (한국 뉴스 보정)
+        async function getNews(query, lang, containerId) {
             const container = document.getElementById(containerId);
-            setStatus(containerId, 'loading');
+            const statusDot = document.getElementById('status-' + containerId);
+            statusDot.className = 'w-2 h-2 rounded-full dot-loading animate-pulse';
+
             if (!lastGoodNews[containerId]) renderSkeleton(container);
 
-            // Each entry: fetch a URL, return normalized items, or throw
-            const sources = [
-                async () => parseRssXml(await (await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`)).text()),
-                async () => parseRssXml(await (await fetch(`https://corsproxy.io/?url=${encodeURIComponent(rssUrl)}`)).text()),
-                async () => {
-                    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`);
-                    const data = await res.json();
-                    if (data.status !== 'ok') throw new Error(data.message || 'rss2json error');
-                    return data.items.map(i => ({ title: i.title, link: i.link, pubDate: i.pubDate, author: i.author || 'SOURCE' }));
-                }
+            const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=${lang}&gl=${lang === 'ko' ? 'KR' : 'US'}&ceid=${lang === 'ko' ? 'KR:ko' : 'US:en'}`;
+            
+            // 프록시 리스트 최적화
+            const proxyUrls = [
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`,
+                `https://corsproxy.io/?url=${encodeURIComponent(rssUrl)}`
             ];
 
-            for (const fetchSource of sources) {
+            for (const url of proxyUrls) {
                 try {
-                    let items = await fetchSource();
-                    if (!items.length) throw new Error('empty feed');
-                    // Belt-and-suspenders: force newest-first regardless of feed order
-                    items = items.slice().sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-                    lastGoodNews[containerId] = items;
-                    renderNews(container, items);
-                    setStatus(containerId, 'ok');
-                    updateTicker();
-                    return;
-                } catch (e) {
-                    // try the next source
-                }
+                    const response = await fetch(url);
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const xml = parser.parseFromString(text, "text/xml");
+                    const items = Array.from(xml.querySelectorAll('item')).map(item => ({
+                        title: item.querySelector('title').textContent,
+                        link: item.querySelector('link').textContent,
+                        pubDate: item.querySelector('pubDate').textContent,
+                        author: item.querySelector('source')?.textContent || 'News'
+                    }));
+
+                    if (items.length > 0) {
+                        lastGoodNews[containerId] = items;
+                        renderNews(container, items);
+                        statusDot.className = 'w-2 h-2 rounded-full dot-live';
+                        return;
+                    }
+                } catch (e) { console.error(`Feed error (${containerId}):`, e); }
             }
 
-            // All sources failed this cycle
-            setStatus(containerId, 'error');
-            if (lastGoodNews[containerId]) {
-                renderNews(container, lastGoodNews[containerId]);
-            } else {
-                container.innerHTML = "<p class='p-4 text-red-400 text-xs'>Signal lost — retrying next cycle</p>";
-            }
+            statusDot.className = 'w-2 h-2 rounded-full dot-error';
         }
 
         function renderNews(container, items) {
-            container.innerHTML = items.map((item, i) => `
-                <a href="${encodeURI(item.link)}" target="_blank" rel="noopener noreferrer" class="news-card block group" style="animation-delay:${i * 30}ms">
+            container.innerHTML = items.slice(0, 15).map((item, i) => `
+                <a href="${item.link}" target="_blank" class="news-card block group" style="animation-delay:${i * 30}ms">
                     <div class="flex justify-between items-center mb-1">
-                        <span class="text-[9px] font-bold text-blue-500 uppercase">${escapeHtml(item.author || 'SOURCE')}</span>
+                        <span class="text-[9px] font-bold text-blue-500 uppercase">${item.author}</span>
                         <span class="text-[9px] text-slate-600 font-mono">${new Date(item.pubDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                     </div>
-                    <h3 class="text-[13.5px] font-semibold text-slate-200 leading-snug group-hover:text-white transition-colors">${escapeHtml(item.title)}</h3>
+                    <h3 class="text-[13px] font-semibold text-slate-200 leading-snug group-hover:text-blue-400 transition-colors">${item.title}</h3>
                 </a>
             `).join('');
         }
 
-        // 1b. 속보 전광판 (모든 피드의 최신 헤드라인을 합쳐서 스크롤 표시)
-        function updateTicker() {
-            const track = document.getElementById('ticker-track');
-            if (!track) return;
-            const combined = ['news-kr', 'news-us', 'news-global']
-                .flatMap(id => (lastGoodNews[id] || []).slice(0, 4))
-                .map(item => escapeHtml(item.title));
-            if (!combined.length) return;
-            const row = combined.map(t => `<span class="mx-6">${t}</span>`).join('<span class="text-slate-600">•</span>');
-            // duplicate the row so the 50%-translateX loop has no visible seam
-            track.innerHTML = row + row;
-        }
-
-        // 1c. 세계 재난 감시 (지진 + GDACS 자연재해 경보)
-        // USGS는 키 없이, CORS 허용된 상태로 바로 호출 가능. GDACS는 RSS라 뉴스와
-        // 같은 CORS 프록시를 재사용해서 가져옴.
-        async function fetchDisasters() {
-            const feedEl = document.getElementById('disaster-feed');
-            const dot = document.getElementById('status-disaster');
-            const setDot = (state) => {
-                if (!dot) return;
-                dot.classList.remove('dot-live', 'dot-error', 'dot-loading');
-                dot.classList.add(state === 'ok' ? 'dot-live' : state === 'error' ? 'dot-error' : 'dot-loading');
-            };
-            setDot('loading');
-
-            let quakes = [];
-            let alerts = [];
-
-            // Earthquakes worldwide, magnitude 4.5+, last 24h
-            try {
-                const res = await fetch('https://earthquake.usgs.gov/earthquakefeeds/geojson/4.5_day.geojson');
-                const data = await res.json();
-                quakes = data.features.map(f => ({
-                    type: 'quake',
-                    time: f.properties.time,
-                    mag: f.properties.mag,
-                    title: `M ${f.properties.mag.toFixed(1)} — ${f.properties.place}`,
-                    link: f.properties.url
-                }));
-            } catch (e) { /* USGS unreachable this cycle */ }
-
-            // GDACS: floods, storms, wildfires, volcanoes, droughts worldwide
-            const gdacsUrl = 'https://www.gdacs.org/xml/rss.xml';
-            const proxies = [
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(gdacsUrl)}`,
-                `https://corsproxy.io/?url=${encodeURIComponent(gdacsUrl)}`
-            ];
-            for (const proxyUrl of proxies) {
-                try {
-                    const text = await (await fetch(proxyUrl)).text();
-                    const xml = new DOMParser().parseFromString(text, 'text/xml');
-                    if (xml.querySelector('parsererror')) throw new Error('bad xml');
-                    alerts = Array.from(xml.querySelectorAll('item')).map(node => {
-                        const title = node.querySelector('title')?.textContent || '';
-                        const pubDate = node.querySelector('pubDate')?.textContent || '';
-                        return {
-                            type: 'gdacs',
-                            time: new Date(pubDate).getTime(),
-                            title,
-                            severity: /red/i.test(title) ? 'red' : /orange/i.test(title) ? 'orange' : 'green',
-                            link: node.querySelector('link')?.textContent || ''
-                        };
-                    });
-                    break; // got a working proxy, stop trying more
-                } catch (e) { /* try next proxy */ }
-            }
-
-            const combined = [...quakes, ...alerts].sort((a, b) => b.time - a.time).slice(0, 12);
-
-            if (!combined.length) {
-                setDot('error');
-                if (!feedEl.children.length) {
-                    feedEl.innerHTML = "<p class='p-4 text-red-400 text-xs col-span-full'>Signal lost — retrying next cycle</p>";
-                }
-                return;
-            }
-
-            setDot('ok');
-            feedEl.innerHTML = combined.map(item => {
-                const badgeColor = item.type === 'quake'
-                    ? (item.mag >= 6 ? 'text-red-400 bg-red-500/10' : item.mag >= 5 ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400 bg-white/5')
-                    : (item.severity === 'red' ? 'text-red-400 bg-red-500/10' : item.severity === 'orange' ? 'text-amber-400 bg-amber-500/10' : 'text-emerald-400 bg-emerald-500/10');
-                const badgeLabel = item.type === 'quake' ? 'EARTHQUAKE' : 'GDACS';
-                return `
-                    <a href="${encodeURI(item.link)}" target="_blank" rel="noopener noreferrer" class="news-card block group bg-slate-950/60 hover:bg-white/5">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${badgeColor}">${badgeLabel}</span>
-                            <span class="text-[9px] text-slate-600 font-mono">${new Date(item.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                        </div>
-                        <h3 class="text-[12.5px] font-semibold text-slate-200 leading-snug group-hover:text-white transition-colors">${escapeHtml(item.title)}</h3>
-                    </a>
-                `;
-            }).join('');
-        }
-
-        // 2. 실시간 환율
-        async function updateExchange() {
+        // 3. 통합 마켓 데이터 (Crypto + Stocks + FX)
+        async function updateMarkets() {
+            // USD/KRW
             try {
                 const res = await fetch('https://open.er-api.com/v6/latest/USD');
                 const data = await res.json();
                 document.getElementById('val-usd').textContent = data.rates.KRW.toFixed(2);
-            } catch (e) { document.getElementById('val-usd').textContent = "ERROR"; }
-        }
+            } catch (e) {}
 
-        // 2b. 지수 실시간 숫자 (KOSPI / KOSDAQ / NASDAQ)
-        // Yahoo Finance's chart endpoint has no CORS headers, so we route it through
-        // the same public proxies used for news, trying each until one works.
-        const INDEX_SYMBOLS = { kospi: '%5EKS11', kosdaq: '%5EKQ11', nasdaq: '%5EIXIC' };
-
-        async function fetchYahooQuote(encodedSymbol) {
-            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodedSymbol}`;
-            const proxies = [
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`,
-                `https://corsproxy.io/?url=${encodeURIComponent(yahooUrl)}`
-            ];
-            for (const proxyUrl of proxies) {
+            // Crypto (Binance Public API - No key)
+            const cryptos = { 'btc': 'BTCUSDT', 'eth': 'ETHUSDT' };
+            for (const [id, symbol] of Object.entries(cryptos)) {
                 try {
-                    const res = await fetch(proxyUrl);
+                    const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`);
                     const data = await res.json();
-                    const meta = data.chart.result[0].meta;
-                    const price = meta.regularMarketPrice;
-                    const prevClose = meta.previousClose ?? meta.chartPreviousClose;
-                    if (typeof price !== 'number') throw new Error('no price');
-                    return { price, prevClose };
-                } catch (e) { /* try next proxy */ }
+                    const price = parseFloat(data.lastPrice);
+                    const pct = parseFloat(data.priceChangePercent);
+                    document.getElementById(`val-${id}`).textContent = price.toLocaleString(undefined, {maximumFractionDigits: 2});
+                    const chgEl = document.getElementById(`chg-${id}`);
+                    chgEl.textContent = `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+                    chgEl.className = `text-[9px] font-mono ${pct >= 0 ? 'text-emerald-500' : 'text-red-500'}`;
+                } catch (e) {}
             }
-            throw new Error('all proxies failed');
-        }
 
-        async function updateIndices() {
-            for (const [key, symbol] of Object.entries(INDEX_SYMBOLS)) {
-                const valEl = document.getElementById('val-' + key);
-                const chgEl = document.getElementById('chg-' + key);
+            // Indices (Yahoo Finance via Proxy)
+            const indices = { 'kospi': '%5EKS11', 'nasdaq': '%5EIXIC', 'sp500': '%5EGSPC' };
+            for (const [id, symbol] of Object.entries(indices)) {
                 try {
-                    const { price, prevClose } = await fetchYahooQuote(symbol);
-                    valEl.textContent = price.toFixed(2);
-                    if (typeof prevClose === 'number') {
-                        const diff = price - prevClose;
-                        const pct = (diff / prevClose) * 100;
-                        const up = diff >= 0;
-                        valEl.className = 'text-xl font-mono font-bold ' + (up ? 'text-emerald-400' : 'text-red-400');
-                        chgEl.className = 'text-[10px] font-mono ' + (up ? 'text-emerald-400' : 'text-red-400');
-                        chgEl.textContent = `${up ? '+' : ''}${diff.toFixed(2)} (${up ? '+' : ''}${pct.toFixed(2)}%)`;
-                    }
-                } catch (e) {
-                    valEl.textContent = 'ERROR';
-                }
+                    const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/' + symbol)}`);
+                    const data = await res.json();
+                    const quote = data.chart.result[0].meta;
+                    const price = quote.regularMarketPrice;
+                    const prev = quote.previousClose;
+                    const pct = ((price - prev) / prev) * 100;
+                    
+                    document.getElementById(`val-${id}`).textContent = price.toFixed(2);
+                    const chgEl = document.getElementById(`chg-${id}`);
+                    chgEl.textContent = `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+                    chgEl.className = `text-[9px] font-mono ${pct >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+                } catch (e) {}
             }
         }
 
-        // 3. 세계 시계
+        // 4. 지도상 재난 정보 (Earthquake + GDACS)
+        async function fetchDisasters() {
+            // Clear old markers
+            map.eachLayer((layer) => { if (layer instanceof L.CircleMarker) map.removeLayer(layer); });
+
+            // 1. Earthquakes (USGS)
+            try {
+                const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson');
+                const data = await res.json();
+                data.features.forEach(feat => {
+                    const [lon, lat] = feat.geometry.coordinates;
+                    const mag = feat.properties.mag;
+                    L.circleMarker([lat, lon], {
+                        radius: mag * 2,
+                        color: '#ef4444',
+                        fillColor: '#ef4444',
+                        fillOpacity: 0.5,
+                        weight: 1
+                    }).addTo(map).bindPopup(`<b>Magnitude: ${mag}</b><br>${feat.properties.place}`);
+                });
+            } catch (e) {}
+
+            // 2. Global Disasters (GDACS RSS 파싱)
+            try {
+                const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://www.gdacs.org/xml/rss.xml')}`);
+                const text = await res.json(); // allorigins returns json with contents
+                const xml = new DOMParser().parseFromString(text, "text/xml");
+                xml.querySelectorAll('item').forEach(item => {
+                    const lat = item.getElementsByTagName('geo:lat')[0]?.textContent;
+                    const lon = item.getElementsByTagName('geo:long')[0]?.textContent;
+                    const title = item.querySelector('title').textContent;
+                    if (lat && lon) {
+                        L.circleMarker([lat, lon], {
+                            radius: 8,
+                            color: '#f59e0b',
+                            fillColor: '#f59e0b',
+                            fillOpacity: 0.7,
+                            weight: 2
+                        }).addTo(map).bindPopup(`<b>Disaster Alert</b><br>${title}`);
+                    }
+                });
+            } catch (e) {}
+        }
+
+        // 유틸리티 함수들
         function updateClocks() {
             const opt = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
             document.getElementById('time-kr').textContent = new Intl.DateTimeFormat('ko-KR', { ...opt, timeZone: 'Asia/Seoul' }).format(new Date());
@@ -458,30 +362,23 @@
             document.getElementById('time-uk').textContent = new Intl.DateTimeFormat('en-GB', { ...opt, timeZone: 'Europe/London' }).format(new Date());
         }
 
-        // 4. 다음 갱신까지 카운트다운
         function tickCountdown() {
             secondsToRefresh -= 1;
             if (secondsToRefresh <= 0) secondsToRefresh = REFRESH_INTERVAL_MS / 1000;
             const m = Math.floor(secondsToRefresh / 60).toString().padStart(2, '0');
             const s = Math.floor(secondsToRefresh % 60).toString().padStart(2, '0');
-            const el = document.getElementById('refresh-countdown');
-            if (el) el.textContent = `NEXT ${m}:${s}`;
+            document.getElementById('refresh-countdown').textContent = `NEXT UPDATE ${m}:${s}`;
         }
 
-        window.onload = () => {
-            lucide.createIcons();
-            setInterval(updateClocks, 1000);
-            setInterval(tickCountdown, 1000);
-            setInterval(fetchAllNews, REFRESH_INTERVAL_MS);
-            setInterval(fetchDisasters, REFRESH_INTERVAL_MS);
-            setInterval(updateExchange, 300000);
-            setInterval(updateIndices, 300000);
-            updateClocks();
-            fetchAllNews();
-            fetchDisasters();
-            updateExchange();
-            updateIndices();
-        };
+        function renderSkeleton(container) {
+            container.innerHTML = Array.from({ length: 6 }).map(() => `
+                <div class="news-card">
+                    <div class="skel h-2 w-12 mb-2"></div>
+                    <div class="skel h-3 w-full mb-1"></div>
+                    <div class="skel h-3 w-2/3"></div>
+                </div>
+            `).join('');
+        }
     </script>
 </body>
 </html>
