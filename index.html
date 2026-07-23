@@ -18,13 +18,16 @@
       margin: 0;
       background: #02040a;
       color: #e2e8f0;
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
       overflow: hidden;
     }
 
-    #map {
+    .map-container {
       height: 100vh;
       width: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
     }
 
     .panel {
@@ -52,9 +55,14 @@
     }
 
     @keyframes pulse {
-      50% {
-        opacity: .3;
-      }
+      50% { opacity: .3; }
+    }
+
+    .tab-btn.active {
+      background-color: #0891b2;
+      color: #ffffff;
+      font-weight: bold;
+      border-color: #06b6d4;
     }
   </style>
 </head>
@@ -64,9 +72,9 @@
   <div class="grid grid-cols-12 h-screen">
 
     <!-- 왼쪽 패널 -->
-    <div class="col-span-3 p-3 space-y-3 overflow-y-auto h-screen">
+    <div class="col-span-3 p-3 space-y-3 overflow-y-auto h-screen z-10">
 
-      <!-- 헤더 타이틀 영역 -->
+      <!-- 타이틀 영역 -->
       <div class="panel rounded-xl p-4">
         <h1 class="text-xl font-black text-cyan-400 title">
           INFO <span class="text-white">FLOW</span>
@@ -89,18 +97,6 @@
         <div id="air" class="text-xs mt-2">동기화 중...</div>
       </div>
 
-      <!-- 화산 정보 -->
-      <div class="panel rounded-xl p-3">
-        <h2 class="text-orange-400 font-bold text-sm">🌋 화산 활동</h2>
-        <div id="volcano" class="text-xs mt-2">동기화 중...</div>
-      </div>
-
-      <!-- 해양 정보 -->
-      <div class="panel rounded-xl p-3">
-        <h2 class="text-blue-400 font-bold text-sm">🌊 해양 상태</h2>
-        <div id="ocean" class="text-xs mt-2">동기화 중...</div>
-      </div>
-
       <!-- 태풍/열대저기압 정보 -->
       <div class="panel rounded-xl p-3">
         <h2 class="text-purple-400 font-bold text-sm">🌪 태풍 및 폭풍</h2>
@@ -116,8 +112,34 @@
     </div>
 
     <!-- 오른쪽 지도 영역 -->
-    <div class="col-span-9 relative">
-      <div id="map"></div>
+    <div class="col-span-9 relative h-screen">
+      
+      <!-- 지도 1: 실시간 관측 지도 -->
+      <div id="map-obs" class="map-container"></div>
+      
+      <!-- 지도 2: 실시간 기상 흐름 지도 -->
+      <div id="map-weather" class="map-container hidden"></div>
+
+      <!-- 상단 중앙 지도 탭 전환 버튼 -->
+      <div class="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] flex gap-2 panel p-1.5 rounded-xl">
+        <button id="btn-obs" onclick="switchMap('obs')" class="tab-btn active px-4 py-1.5 rounded-lg text-xs transition-all border border-transparent">
+          📍 실시간 관측 지도
+        </button>
+        <button id="btn-weather" onclick="switchMap('weather')" class="tab-btn px-4 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition-all border border-transparent">
+          🌀 기상 흐름 지도
+        </button>
+      </div>
+
+      <!-- 기상 지도용 레이어 선택 필터 (기상 지도 탭일 때만 표시) -->
+      <div id="weather-controls" class="absolute top-16 left-1/2 -translate-x-1/2 z-[1000] hidden flex gap-1.5 panel p-1 rounded-lg text-[11px]">
+        <button onclick="setWeatherLayer('wind')" class="px-2.5 py-1 bg-cyan-950/80 text-cyan-300 rounded hover:bg-cyan-800">💨 바람 흐름</button>
+
+        <button onclick="setWeatherLayer('precip')" class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded hover:bg-slate-700">🌧 강수량(비/눈)</button>
+
+        <button onclick="setWeatherLayer('clouds')" class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded hover:bg-slate-700">☁ 구름/위성</button>
+
+        <button onclick="setWeatherLayer('temp')" class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded hover:bg-slate-700">🌡 기온</button>
+      </div>
 
       <!-- 우측 상단 ISS 위치 표시 -->
       <div class="absolute top-4 right-4 z-[1000] panel rounded-xl p-3 text-xs">
@@ -125,29 +147,95 @@
         <div id="iss">국제우주정거장(ISS) 동기화 중...</div>
       </div>
 
-      <!-- 좌측 하단 지도 범례 -->
-      <div class="absolute bottom-4 left-4 z-[1000] panel rounded-xl p-3 text-xs leading-relaxed">
+      <!-- 좌측 하단 지도 범례 (관측 지도일 때 표시) -->
+      <div id="legend-obs" class="absolute bottom-4 left-4 z-[1000] panel rounded-xl p-3 text-xs leading-relaxed">
         🔴 지진 발생지<br>
         🟢 주요 도시 대기질<br>
         🔵 ISS (우주정거장)<br>
         🟠 활동 중인 태풍
       </div>
+
     </div>
 
   </div>
 
   <script>
     // ================================
-    // 지도 및 레이어 초기화
+    // 지도 초기화 (2개 독립 생성)
     // ================================
-    const map = L.map('map').setView([20, 0], 2);
-
-    // 어두운 테마 지도 타일 (CartoDB Dark Matter)
+    
+    // 1. 관측 지도 (Dark Matter)
+    const mapObs = L.map('map-obs').setView([20, 0], 2);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap &copy; CARTO',
       maxZoom: 19
-    }).addTo(map);
+    }).addTo(mapObs);
 
+    // 2. 기상 흐름 지도
+    const mapWeather = L.map('map-weather').setView([20, 0], 2);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19
+    }).addTo(mapWeather);
+
+    // 기상 레이어 변수
+    let currentWeatherLayer = null;
+
+    // 기상 레이어 변경 함수 (RainViewer & OpenStreetMap 계열 무료 레이어)
+    function setWeatherLayer(type) {
+      if (currentWeatherLayer) {
+        mapWeather.removeLayer(currentWeatherLayer);
+      }
+
+      let tileUrl = '';
+      if (type === 'wind') {
+        tileUrl = 'https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=9de243494c0b295cca9337e1e96b00e2';
+      } else if (type === 'precip') {
+        tileUrl = 'https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=9de243494c0b295cca9337e1e96b00e2';
+      } else if (type === 'clouds') {
+        tileUrl = 'https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=9de243494c0b295cca9337e1e96b00e2';
+      } else if (type === 'temp') {
+        tileUrl = 'https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=9de243494c0b295cca9337e1e96b00e2';
+      }
+
+      currentWeatherLayer = L.tileLayer(tileUrl, { opacity: 0.65 }).addTo(mapWeather);
+    }
+    
+    // 기본 기상 레이어를 바람으로 설정
+    setWeatherLayer('wind');
+
+    // 지도 탭 전환 함수
+    function switchMap(target) {
+      const btnObs = document.getElementById('btn-obs');
+      const btnWeather = document.getElementById('btn-weather');
+      const mapObsEl = document.getElementById('map-obs');
+      const mapWeatherEl = document.getElementById('map-weather');
+      const weatherControls = document.getElementById('weather-controls');
+      const legendObs = document.getElementById('legend-obs');
+
+      if (target === 'obs') {
+        mapObsEl.classList.remove('hidden');
+        mapWeatherEl.classList.add('hidden');
+        weatherControls.classList.add('hidden');
+        legendObs.classList.remove('hidden');
+        
+        btnObs.classList.add('active');
+        btnWeather.classList.remove('active');
+        mapObs.invalidateSize();
+      } else {
+        mapObsEl.classList.add('hidden');
+        mapWeatherEl.classList.remove('hidden');
+        weatherControls.classList.remove('hidden');
+        legendObs.classList.add('hidden');
+        
+        btnWeather.classList.add('active');
+        btnObs.classList.remove('active');
+        mapWeather.invalidateSize();
+      }
+    }
+
+    // ================================
+    // 관측 레이어 관리
+    // ================================
     const layers = {
       earth: [],
       air: [],
@@ -156,12 +244,12 @@
     };
 
     function clearLayer(layerArray) {
-      layerArray.forEach(m => map.removeLayer(m));
+      layerArray.forEach(m => mapObs.removeLayer(m));
       layerArray.length = 0;
     }
 
     // ================================
-    // 한국 표준시(KST) 시계 및 ISS 추적 로직
+    // 한국 시계 & ISS 추적
     // ================================
     function updateClock() {
       const now = new Date();
@@ -175,7 +263,6 @@
         second: '2-digit',
         hour12: false
       });
-      
       document.getElementById('clock').innerText = `KST ${kstString}`;
     }
     setInterval(updateClock, 1000);
@@ -200,7 +287,7 @@
             color: '#3b82f6',
             fillColor: '#60a5fa',
             fillOpacity: 0.8
-          }).addTo(map);
+          }).addTo(mapObs);
           layers.iss.bindPopup('<b>🛰 국제우주정거장 (ISS)</b>');
         }
       } catch (e) {
@@ -211,10 +298,10 @@
     loadISS();
 
     // ================================
-    // 글로벌 데이터 수집 엔진
+    // 데이터 수집 엔진
     // ================================
 
-    // 1. 지진 정보 (USGS)
+    // 1. 지진 정보
     async function loadEarthquake() {
       try {
         clearLayer(layers.earth);
@@ -236,7 +323,7 @@
             color: "#ef4444",
             fillColor: "#f87171",
             fillOpacity: 0.5
-          }).addTo(map);
+          }).addTo(mapObs);
 
           marker.bindPopup(`
             <b>지진 발생</b><br>
@@ -251,7 +338,7 @@
       }
     }
 
-    // 2. 주요 도시 대기질 (Open-Meteo)
+    // 2. 대기질 정보
     async function loadAir() {
       clearLayer(layers.air);
       const cities = [
@@ -284,7 +371,7 @@
             color: "#10b981",
             fillColor: "#34d399",
             fillOpacity: 0.6
-          }).addTo(map);
+          }).addTo(mapObs);
 
           marker.bindPopup(`<b>${city.name}</b><br>대기질 지수: ${aqi} (${statusText})`);
           layers.air.push(marker);
@@ -302,7 +389,7 @@
       document.getElementById("air").innerHTML = html;
     }
 
-    // 3. 우주 기상 (NOAA)
+    // 3. 우주 기상
     async function loadSolar() {
       try {
         const res = await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json");
@@ -327,26 +414,7 @@
       }
     }
 
-    // 4. 화산 활동
-    async function loadVolcano() {
-      document.getElementById("volcano").innerHTML = `
-        <div class="item">전 세계 화산 활동 모니터링</div>
-        <div class="text-gray-400 mt-1">출처: 스미소니언 GVP</div>
-      `;
-    }
-
-    // 5. 해양 상태
-    async function loadOcean() {
-      document.getElementById("ocean").innerHTML = `
-        <div class="item">해수면 및 해양 관측</div>
-        <div class="flex justify-between mt-1">
-          <span>출처: NOAA</span>
-          <span class="text-green-400">정상 범위</span>
-        </div>
-      `;
-    }
-
-    // 6. 태풍/폭풍 (NOAA NHC)
+    // 4. 태풍/폭풍
     async function loadStorm() {
       try {
         clearLayer(layers.storm);
@@ -365,7 +433,7 @@
               color: "#c084fc",
               fillColor: "#a855f7",
               fillOpacity: 0.7
-            }).addTo(map);
+            }).addTo(mapObs);
 
             marker.bindPopup(`🌪 <b>${storm.name}</b>`);
             layers.storm.push(marker);
@@ -378,18 +446,16 @@
       }
     }
 
-    // 전 시스템 데이터 불러오기
+    // 실행
     function runGlobalSystems() {
       loadEarthquake();
       loadAir();
       loadSolar();
-      loadVolcano();
-      loadOcean();
       loadStorm();
     }
 
     runGlobalSystems();
-    setInterval(runGlobalSystems, 600000); // 10분마다 갱신
+    setInterval(runGlobalSystems, 600000);
   </script>
 </body>
 
