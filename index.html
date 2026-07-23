@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>글로벌 모니터링 시스템</title>
+  <title>INFO FLOW</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -34,7 +34,7 @@
     }
 
     .title {
-      letter-spacing: 2px;
+      letter-spacing: 3px;
     }
 
     .item {
@@ -66,9 +66,10 @@
     <!-- 왼쪽 패널 -->
     <div class="col-span-3 p-3 space-y-3 overflow-y-auto h-screen">
 
+      <!-- 헤더 타이틀 영역 -->
       <div class="panel rounded-xl p-4">
         <h1 class="text-xl font-black text-cyan-400 title">
-          지구 종합 <span class="text-white">모니터링</span>
+          INFO <span class="text-white">FLOW</span>
         </h1>
         <div class="flex items-center gap-2 text-xs mt-2">
           <div class="dot"></div>
@@ -110,15 +111,6 @@
       <div class="panel rounded-xl p-3">
         <h2 class="text-yellow-400 font-bold text-sm">☀ 우주 기상 (태풍/자기장)</h2>
         <div id="solar" class="text-xs mt-2">동기화 중...</div>
-      </div>
-
-      <!-- AI 지구 보고서 -->
-      <div class="panel rounded-xl p-3">
-        <h2 class="text-pink-400 font-bold text-sm">🧠 AI 지구 종합 진단</h2>
-        <div id="ai" class="text-xs mt-3 leading-5">분석 대기 중</div>
-        <button onclick="generatePlanetReport()" class="mt-3 w-full py-2 bg-cyan-700 hover:bg-cyan-600 transition-colors rounded text-xs text-white font-bold">
-          AI 진단 보고서 생성
-        </button>
       </div>
 
     </div>
@@ -173,7 +165,6 @@
     // ================================
     function updateClock() {
       const now = new Date();
-      // 'Asia/Seoul' 타임존 명시 및 한국어 형식 지정
       const kstString = now.toLocaleString('ko-KR', {
         timeZone: 'Asia/Seoul',
         year: 'numeric',
@@ -399,70 +390,6 @@
 
     runGlobalSystems();
     setInterval(runGlobalSystems, 600000); // 10분마다 갱신
-
-    // ===================================
-    // AI 지구 진단 엔진 (한국어 응답 설정)
-    // ===================================
-    function collectPlanetData() {
-      return {
-        earthquakes_count: layers.earth.length,
-        airQuality_summary: document.getElementById("air").innerText.replace(/\n/g, ', '),
-        storms_count: layers.storm.length,
-        solar_status: document.getElementById("solar").innerText.replace(/\n/g, ' '),
-        timestamp: new Date().toISOString()
-      };
-    }
-
-    async function generatePlanetReport() {
-      const state = collectPlanetData();
-      const aiContainer = document.getElementById("ai");
-
-      aiContainer.innerHTML = `<div class="text-cyan-400 animate-pulse">AI가 실시간 데이터를 분석 중입니다...</div>`;
-
-      const prompt = `
-당신은 지구 환경 모니터링 AI 시스템입니다.
-아래 제공된 실시간 지구 관측 데이터를 분석하고 한국어로 요약 진단 보고서를 작성하세요.
-
-수칙:
-- 절대 재난을 자의적으로 예측하지 마세요.
-- 현재 수집된 관측 데이터 상태만을 명확하고 정돈된 한글로 요약하세요.
-- 친절하고 전문적인 어조로 보고서를 작성하세요.
-
-실시간 데이터:
-${JSON.stringify(state, null, 2)}
-
-반드시 다음 형식으로 한국어로 답변하세요:
-🌍 지각 활동: [요약 내용]
-🌫 대기 환경: [요약 내용]
-🌪 기상/폭풍: [요약 내용]
-☀ 우주 기상: [요약 내용]
-📌 종합 진단: [한 줄 결론]
-`;
-
-      try {
-        const response = await fetch("http://localhost:11434/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "llama3",
-            prompt: prompt,
-            stream: false
-          })
-        });
-
-        if (!response.ok) throw new Error("로컬 AI 서버 연결 불가");
-
-        const result = await response.json();
-        aiContainer.innerHTML = `<div class="leading-relaxed text-slate-200">${result.response.replace(/\n/g, "<br>")}</div>`;
-
-      } catch (e) {
-        aiContainer.innerHTML = `
-          <span class="text-red-400 font-bold">로컬 AI 오프라인</span><br>
-          <span class="text-gray-400 text-[10px]">Ollama 서버를 실행해주세요:</span><br>
-          <code class="bg-black/50 px-1 py-0.5 rounded text-cyan-300">ollama serve</code>
-        `;
-      }
-    }
   </script>
 </body>
 
